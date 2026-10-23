@@ -145,6 +145,15 @@ export const CSS = `
   .ehandles.dragging[data-h=p-top] .eh-p-top, .ehandles.dragging[data-h=p-right] .eh-p-right, .ehandles.dragging[data-h=p-bottom] .eh-p-bottom, .ehandles.dragging[data-h=p-left] .eh-p-left { opacity:1; }
   .eghost { position:fixed; display:none; pointer-events:none; border:2px dashed var(--ink); opacity:.45; }
   .eread { position:fixed; display:none; pointer-events:none; background:var(--pink); color:var(--ink); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--blue); font:12px/1.5 var(--mono); padding:2px 8px; white-space:nowrap; z-index:2; }
+  /* Sizes: the page at three sizes, side by side */
+  .sizes { position:fixed; inset:0; pointer-events:auto; background:rgba(236,232,222,.96); display:grid; grid-template-rows:auto 1fr; z-index:4; }
+  .sizesbar { display:flex; align-items:center; gap:12px; padding:10px 18px; border-bottom:var(--edge); background:var(--paper); }
+  .sizesbar b { font:16px var(--display); }
+  .sizesrow { display:flex; gap:22px; justify-content:safe center; align-items:flex-start; padding:16px 24px; overflow:auto; }
+  .sizesrow figure { margin:0; display:grid; gap:6px; }
+  .sizesrow figcaption { font:12px var(--mono); }
+  .sizebox { position:relative; overflow:hidden; border:var(--edge); box-shadow:6px 6px 0 var(--blue); background:#fff; }
+  .sizebox iframe { position:absolute; left:0; top:0; border:0; transform-origin:0 0; background:#fff; }
   /* pins the agent finished: a tray by the bar, and before and after */
   .donetray { position:fixed; left:var(--bar-x, 12px); bottom:var(--bar-y, 62px); width:340px; display:grid; gap:6px; pointer-events:auto; }
   :host([data-h=r]) .donetray { left:auto; right:var(--bar-x, 12px); }

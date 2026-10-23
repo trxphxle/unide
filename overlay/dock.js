@@ -75,6 +75,8 @@ let dragging = null;
 export function startDock() {
   const bar = $('.bar'), brand = $('.bar .brand');
   if (!bar || !brand) return;
+  // inside a Sizes frame the bar stays out: the page around it has its own
+  if (/^unide-size:/.test(window.name || '')) { bar.style.display = 'none'; return; }
   brand.title = 'Drag to move the bar · double-click to let it find a free corner';
   brand.style.cursor = 'grab';
   bar.classList.add('mini');

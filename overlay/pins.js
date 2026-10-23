@@ -61,7 +61,8 @@ async function info(el, t = {}) {
     if (d.component) e.component = d.component;
   }
   if (t.kind === 'word') Object.assign(e, { word: t.word, part: `the word “${t.word.text}” (in “…${t.word.before}${t.word.text}${t.word.after}…”)` });
-  if (frozen() && !isQuiet()) e.frozen = true; // the user's own Freeze, not the hold every ⌥-click makes
+  if (frozen() && !isQuiet()) e.frozen = true;
+  e.viewport = { w: innerWidth, h: innerHeight, ...(/^unide-size:/.test(window.name || '') ? { size: window.name.slice(11) } : {}) }; // the user's own Freeze, not the hold every ⌥-click makes
   return e;
 }
 // a ::before or ::after: its own look, and the rules that draw it
@@ -629,19 +630,26 @@ function showAnswers(list) {
   if (skipped.length || plain.length) flash([...plain.map((a) => `✓ #${a.id} done: ${a.reply}`), ...skipped.map((a) => `#${a.id} skipped: ${a.reply} (still in Pins)`)].join('\n'));
   else draw();
 }
+// One live connection per site, not one per page: a browser lets a page talk to a server over only six connections at
+// a time, and each open stream holds one, so with a few tabs or the Sizes frames every other request would wait
+// forever. The pages take turns holding it (a Web Lock) and the holder passes each message on (a BroadcastChannel).
 function listen() {
-  const es = new EventSource('/__unide/events');
-  es.onmessage = async (m) => {
-    const ev = JSON.parse(m.data);
-    if (ev.type === 'file' && ASSET.test(ev.file)) { clearTimeout(listen.t); listen.t = setTimeout(() => location.reload(), 200); }
-    if (ev.type === 'pins') {
-      // don't swap the pins out from under a note you're typing; catch up when you're done
-      if (root.activeElement?.closest?.('.pop')) { listen.behind = true; if (ev.answered) (listen.missed ||= []).push(...ev.answered); return; }
-      await load();
-      // addressed pins are already cleared, so their answer is shown once here; skipped ones stay with the reason
-      showAnswers(ev.answered);
-    }
-  };
+  const bc = 'BroadcastChannel' in window ? new BroadcastChannel('unide-events') : null;
+  const open = () => { const es = new EventSource('/__unide/events'); es.onmessage = (m) => { handle(m); bc?.postMessage(m.data); }; return es; };
+  if (bc) bc.onmessage = (m) => handle({ data: m.data });
+  if (bc && navigator.locks) navigator.locks.request('unide-events', () => new Promise(() => open())); // held while this page lives
+  else open();
+}
+async function handle(m) {
+  const ev = JSON.parse(m.data);
+  if (ev.type === 'file' && ASSET.test(ev.file)) { clearTimeout(listen.t); listen.t = setTimeout(() => location.reload(), 200); }
+  if (ev.type === 'pins') {
+    // don't swap the pins out from under a note you're typing; catch up when you're done
+    if (root.activeElement?.closest?.('.pop')) { listen.behind = true; if (ev.answered) (listen.missed ||= []).push(...ev.answered); return; }
+    await load();
+    // addressed pins are already cleared, so their answer is shown once here; skipped ones stay with the reason
+    showAnswers(ev.answered);
+  }
 }
 export function startPins() {
   api('ping').then((p) => setRoot(p.root)).catch(() => {});
