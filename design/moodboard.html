@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>unide looks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Caveat:wght@500;700&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Inter+Tight:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --page:#ecebe6; --text:#1c1c1a; --muted:#6c6a63; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--text); font:15px/1.5 'Inter Tight', system-ui, sans-serif; }
+  header.top { flex-wrap:wrap; position:sticky; top:0; z-index:5; display:flex; gap:18px; align-items:center; padding:14px 28px; background:rgba(236,235,230,.92); backdrop-filter:blur(8px); border-bottom:1px solid #d6d4cc; }
+  header.top h1 { font:500 18px 'Inter Tight'; margin:0 12px 0 0; }
+  header.top a { white-space:nowrap; color:var(--text); text-decoration:none; font-size:14px; padding:4px 10px; border-radius:999px; border:1px solid #cfccc2; }
+  header.top a:hover { background:#fff; }
+  header.top .hint { margin-left:auto; color:var(--muted); font-size:13px; }
+  main { padding:28px; display:grid; gap:36px; max-width:1500px; margin:0 auto; }
+  .intro { max-width:760px; color:var(--muted); }
+
+  /* one board per direction; each sets its own tokens */
+  .board { --radius:10px; border-radius:18px; overflow:hidden; background:var(--bg); color:var(--ink); box-shadow:0 1px 0 rgba(0,0,0,.05); }
+  .board > .head { display:flex; align-items:baseline; gap:16px; padding:22px 28px 6px; flex-wrap:wrap; }
+  .board > .head h2 { margin:0; font:var(--display); }
+  .board > .head p { margin:0; color:var(--soft); max-width:560px; }
+  .board .grid { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:22px; padding:16px 28px 28px; }
+  @media (max-width: 980px) { .board .grid { grid-template-columns:1fr; } }
+  .tile { background:var(--paper); border-radius:var(--radius); padding:18px; position:relative; border:var(--edge); }
+  .label { font:var(--mono); color:var(--soft); text-transform:lowercase; letter-spacing:.02em; margin:0 0 10px; display:block; }
+  .sheet { display:grid; gap:16px; grid-template-columns:1fr 1fr; align-content:start; }
+  .sheet .wide { grid-column:1 / -1; }
+
+  /* the sample app the overlay sits on (the same in every board) */
+  .app { position:relative; background:#fff; color:#1f2328; border-radius:12px; padding:22px; min-height:520px; font:14px/1.5 'Inter Tight', system-ui; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .app h3 { margin:0 0 4px; font:600 18px 'Inter Tight'; }
+  .app .sub { color:#6b7280; margin:0 0 16px; }
+  .app .row { display:flex; gap:10px; align-items:center; margin:10px 0; }
+  .app .plan { border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; flex:1; }
+  .app .plan b { display:block; }
+  .app .save { background:#6b6b6b; color:#fff; border:0; padding:8px 16px; border-radius:6px; font:500 14px 'Inter Tight'; position:relative; }
+  .app .link { color:#2563eb; position:relative; }
+  .app .toggle { width:34px; height:20px; border-radius:999px; background:#d1d5db; position:relative; }
+  .app .toggle::after { content:''; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#fff; }
+
+  /* overlay pieces, styled by each board's tokens */
+  .ov { font:var(--body); }
+  .badge { position:absolute; display:grid; place-items:center; min-width:22px; height:22px; font:var(--badge); color:var(--on-accent); background:var(--accent); border-radius:var(--badge-radius); padding:0 5px; }
+  .card { position:absolute; width:290px; background:var(--card); color:var(--card-ink); border:var(--card-edge); border-radius:var(--card-radius); padding:14px 16px; box-shadow:var(--card-shadow); transform:var(--card-tilt, none); }
+  .card .t { font:var(--card-title); margin:0; }
+  .card .src { font:var(--mono); color:var(--card-soft); margin:2px 0 10px; }
+  .card .note { font:var(--note); color:var(--card-ink); border-bottom:var(--note-line); padding:2px 0 6px; min-height:28px; }
+  .card .chips { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 8px; }
+  .chip { font:var(--chip); color:var(--card-ink); background:var(--chip-bg); border:var(--chip-edge); border-radius:var(--chip-radius); padding:3px 9px; }
+  .chip.on { background:var(--accent); color:var(--on-accent); border-color:transparent; }
+  .card .changed { font:var(--mono); color:var(--accent2); margin:4px 0 8px; }
+  .card .keys { font:var(--mono); color:var(--card-soft); display:flex; justify-content:space-between; border-top:var(--rule); padding-top:8px; margin-top:6px; }
+  .card .done { font:var(--chip); background:var(--accent); color:var(--on-accent); border-radius:var(--chip-radius); padding:3px 10px; }
+  .bar { display:inline-flex; align-items:center; gap:4px; padding:5px; background:var(--bar); color:var(--bar-ink); border-radius:var(--bar-radius); border:var(--bar-edge); box-shadow:var(--card-shadow); }
+  .bar .brand { font:var(--brand); padding:0 8px 0 6px; }
+  .bar button { white-space:nowrap; font:var(--chip); color:var(--bar-ink); background:transparent; border:var(--bar-btn-edge); border-radius:var(--bar-radius); padding:5px 11px; }
+  .bar button.primary { background:var(--accent); color:var(--on-accent); border-color:transparent; }
+  .dot { display:inline-flex; align-items:center; gap:5px; padding:4px 6px 4px 9px; background:var(--bar); color:var(--bar-ink); border-radius:var(--bar-radius); border:var(--bar-edge); font:var(--brand); box-shadow:var(--card-shadow); }
+  .dot b { font:var(--badge); min-width:18px; text-align:center; padding:1px 5px; border-radius:999px; background:var(--chip-bg); color:var(--card-ink); }
+  .dot b.has { background:var(--accent); color:var(--on-accent); }
+  .list { background:var(--card); color:var(--card-ink); border:var(--card-edge); border-radius:var(--card-radius); padding:12px 14px; display:grid; gap:8px; box-shadow:var(--card-shadow); }
+  .list .item { display:flex; gap:10px; align-items:center; padding:7px 8px; border-radius:calc(var(--card-radius) / 2); background:var(--chip-bg); }
+  .list .item .badge { position:static; }
+  .list .item .x { margin-left:auto; color:var(--card-soft); font:16px/1 var(--plain); }
+  .list .item small { display:block; color:var(--card-soft); font:var(--mono); }
+  .toast { display:inline-block; background:var(--toast); color:var(--toast-ink); font:var(--chip); padding:9px 14px; border-radius:var(--card-radius); box-shadow:var(--card-shadow); }
+  .states { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .states .badge { position:static; }
+  .states span { font:var(--mono); color:var(--soft); margin-right:8px; }
+  .swatches { display:flex; gap:8px; }
+  .sw { flex:1; height:58px; border-radius:calc(var(--radius) / 1.5); position:relative; border:1px solid rgba(0,0,0,.08); }
+  .sw i { position:absolute; left:6px; bottom:4px; font:var(--mono); font-style:normal; color:inherit; }
+  .spec .big { font:var(--display); margin:0; }
+  .spec .body { font:var(--note); margin:6px 0; }
+  .spec .code { font:var(--mono); color:var(--soft); }
+  .mark3d { width:100%; height:150px; }
+
+  .logos { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:22px; padding:16px 28px 28px; }
+  .logos figure { margin:0; background:#fff; border:3px solid #161616; box-shadow:6px 6px 0 #0078bf; padding:22px; display:grid; gap:12px; justify-items:start; }
+  .logos figure > svg { width:150px; height:150px; overflow:visible; }
+  .logos path { fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .logos figure:first-child path { fill:none; stroke-linecap:round; mix-blend-mode:multiply; }
+  .logos figure:first-child .vortex { transform-origin:12px 12px; animation:whirl 5s linear infinite; }
+  .logos figure:first-child:hover .vortex { animation-duration:2s; }
+  @keyframes whirl { to { transform:rotate(360deg); } }
+  .logos .p1 { stroke:#ff48b0; transform:translate(-.7px, -.7px); }
+  .logos .p2 { stroke:#0078bf; transform:translate(.7px, .7px); mix-blend-mode:multiply; }
+  .logos figcaption { font:12px 'Space Mono'; color:#5f5d57; } .logos figcaption b { display:block; font:400 18px 'Archivo Black'; color:#161616; }
+  .tiny { display:inline-flex; align-items:center; gap:5px; border:3px solid #161616; box-shadow:4px 4px 0 #0078bf; padding:3px 5px 3px 3px; background:#fff; }
+  .tiny svg { width:24px; height:24px; overflow:visible; } .tiny b { font:11px 'Archivo Black'; background:#ff48b0; padding:1px 5px; }
+  /* ---------- 1. ink and paper ---------- */
+  .ink { --bg:#f3ede1; --paper:#fbf8f1; --ink:#2a2622; --soft:#8a7f6c; --accent:#c8361b; --accent2:#2f6f5e; --on-accent:#fbf8f1;
+    --display:400 38px/1 'Instrument Serif'; --body:15px 'Inter Tight'; --mono:12px 'Space Mono'; --note:italic 19px/1.3 'Instrument Serif'; --plain:'Inter Tight';
+    --badge:italic 15px/1 'Instrument Serif'; --badge-radius:50%; --brand:italic 20px/1 'Instrument Serif'; --chip:13px 'Inter Tight'; --card-title:400 24px/1 'Instrument Serif';
+    --card:#fffdf8; --card-ink:#2a2622; --card-soft:#8a7f6c; --card-edge:1px solid #e3d9c6; --card-radius:6px; --card-shadow:0 10px 30px -12px rgba(60,40,20,.25);
+    --note-line:1px solid #e6dccb; --rule:1px dashed #e3d9c6; --chip-bg:#f4eee2; --chip-edge:1px solid #e3d9c6; --chip-radius:999px;
+    --bar:#2a2622; --bar-ink:#f3ede1; --bar-radius:999px; --bar-edge:0; --bar-btn-edge:1px solid rgba(243,237,225,.18); --toast:#2a2622; --toast-ink:#f3ede1; --edge:1px solid #e9e0cf; }
+  .ink .badge { background:transparent; color:var(--accent); border:2px solid var(--accent); transform:rotate(-8deg); }
+  .ink .list .badge, .ink .states .badge { transform:none; }
+
+  /* ---------- 2. riso poster ---------- */
+  .riso { --bg:#f2efe8; --paper:#fbfaf6; --ink:#161616; --soft:#5f5d57; --accent:#ff48b0; --accent2:#0078bf; --on-accent:#161616;
+    --display:400 40px/1 'Archivo Black'; --body:14px 'Space Mono'; --mono:12px 'Space Mono'; --note:14px/1.45 'Space Mono'; --plain:'Space Mono';
+    --badge:14px/1 'Archivo Black'; --badge-radius:0; --brand:16px/1 'Archivo Black'; --chip:12px 'Space Mono'; --card-title:400 20px/1 'Archivo Black';
+    --card:#ffffff; --card-ink:#161616; --card-soft:#5f5d57; --card-edge:3px solid #161616; --card-radius:0; --card-shadow:6px 6px 0 #0078bf;
+    --note-line:0; --rule:2px solid #161616; --chip-bg:#f2efe8; --chip-edge:2px solid #161616; --chip-radius:0;
+    --bar:#ffffff; --bar-ink:#161616; --bar-radius:0; --bar-edge:3px solid #161616; --bar-btn-edge:2px solid transparent; --toast:#0078bf; --toast-ink:#fff; --edge:3px solid #161616; }
+
+  /* ---------- 3. moodboard ---------- */
+  .mood { --bg:#e4d4b6; --paper:#efe3cb; --ink:#3a3220; --soft:#7a6a4a; --accent:#d9352b; --accent2:#3d7a4f; --on-accent:#fff;
+    --display:700 46px/1 'Caveat'; --body:15px 'Inter Tight'; --mono:12px 'Space Mono'; --note:500 25px/1.05 'Caveat'; --plain:'Inter Tight';
+    --badge:700 16px/1 'Caveat'; --badge-radius:50%; --brand:700 22px/1 'Caveat'; --chip:500 19px/1 'Caveat'; --card-title:700 28px/1 'Caveat';
+    --card:#ffe680; --card-ink:#3a3220; --card-soft:#7a6a3a; --card-edge:0; --card-radius:2px; --card-shadow:0 8px 14px -8px rgba(60,40,0,.4); --card-tilt:rotate(-2deg);
+    --note-line:0; --rule:1px dashed rgba(58,50,32,.3); --chip-bg:rgba(255,255,255,.55); --chip-edge:0; --chip-radius:3px;
+    --bar:#fffaf0; --bar-ink:#3a3220; --bar-radius:6px; --bar-edge:0; --bar-btn-edge:0; --toast:#bfe3c4; --toast-ink:#1f3d26; --edge:0; }
+  .mood .badge { box-shadow:inset -3px -3px 0 #a3241c, 0 3px 3px rgba(0,0,0,.25); }
+  .mood .card::before { content:''; position:absolute; left:110px; top:-9px; width:62px; height:18px; background:rgba(255,255,255,.55); transform:rotate(3deg); }
+  .mood .list { transform:rotate(1deg); }
+
+  /* ---------- 4. studio grid ---------- */
+  .studio { --bg:#ffffff; --paper:#f5f5f3; --ink:#111111; --soft:#7a7a7a; --accent:#ff4f00; --accent2:#ff4f00; --on-accent:#111;
+    --display:700 40px/1 'Inter Tight'; --body:14px 'Inter Tight'; --mono:11.5px 'Space Mono'; --note:15px/1.4 'Inter Tight'; --plain:'Inter Tight';
+    --badge:12px/1 'Space Mono'; --badge-radius:0; --brand:700 15px/1 'Inter Tight'; --chip:13px 'Inter Tight'; --card-title:500 17px/1.1 'Inter Tight';
+    --card:#111111; --card-ink:#f2f2f2; --card-soft:#8c8c8c; --card-edge:0; --card-radius:0; --card-shadow:none;
+    --note-line:1px solid #2b2b2b; --rule:1px solid #2b2b2b; --chip-bg:#1e1e1e; --chip-edge:0; --chip-radius:0;
+    --bar:#111111; --bar-ink:#f2f2f2; --bar-radius:0; --bar-edge:0; --bar-btn-edge:0; --toast:#111; --toast-ink:#ff4f00; --edge:1px solid #e6e6e3; }
+  .studio > .head h2 { letter-spacing:-.03em; }
+  .studio .badge { color:#111; }
+</style>
+</head>
+<body>
+<header class="top"><h1>unide looks</h1>
+  <a href="#logo">The mark</a><a href="#ink">Ink and paper</a><a href="#riso">Riso poster</a><a href="#mood">Moodboard</a><a href="#studio">Studio grid</a>
+  <span class="hint">⌥-click anything here to pin what you like or don't</span></header>
+<main>
+<section class="board riso" id="logo"><div class="head"><h2>The mark</h2><p>Instead of the word: a swirl, printed in the two inks a little apart. A is in the bar now; B and C are other ways to go.</p></div>
+  <div class="logos">
+    <figure><svg viewBox="0 0 24 24"><path pathLength="60" d="M12 12 A2 2 0 0 1 16 12 A4 4 0 0 1 8 12 A6 6 0 0 1 20 12 A8 8 0 0 1 4 12" class="p1"/><path pathLength="60" d="M12 12 A2 2 0 0 1 16 12 A4 4 0 0 1 8 12 A6 6 0 0 1 20 12 A8 8 0 0 1 4 12" class="p2"/></svg>
+      <figcaption><b>A · Whirlpool</b>many arms, drawn in forever</figcaption><span class="tiny"><svg viewBox="0 0 24 24"><path pathLength="60" d="M12 12 A2 2 0 0 1 16 12 A4 4 0 0 1 8 12 A6 6 0 0 1 20 12 A8 8 0 0 1 4 12" class="p1"/><path pathLength="60" d="M12 12 A2 2 0 0 1 16 12 A4 4 0 0 1 8 12 A6 6 0 0 1 20 12 A8 8 0 0 1 4 12" class="p2"/></svg><b>3</b></span></figure>
+    <figure><svg viewBox="0 0 24 24"><path d="M6 4 V13 A6 6 0 0 0 18 13 V10 A3 3 0 0 0 12 10 A1.5 1.5 0 0 0 13.5 11.5" class="p1"/><path d="M6 4 V13 A6 6 0 0 0 18 13 V10 A3 3 0 0 0 12 10 A1.5 1.5 0 0 0 13.5 11.5" class="p2"/></svg>
+      <figcaption><b>B · Curled u</b>the u's arm curls in</figcaption><span class="tiny"><svg viewBox="0 0 24 24"><path d="M6 4 V13 A6 6 0 0 0 18 13 V10 A3 3 0 0 0 12 10 A1.5 1.5 0 0 0 13.5 11.5" class="p1"/><path d="M6 4 V13 A6 6 0 0 0 18 13 V10 A3 3 0 0 0 12 10 A1.5 1.5 0 0 0 13.5 11.5" class="p2"/></svg><b>3</b></span></figure>
+    <figure><svg viewBox="0 0 24 24"><path d="M12 22 C12 22 4.5 14.5 4.5 9.5 A7.5 7.5 0 0 1 19.5 9.5 C19.5 14.5 12 22 12 22 Z M12 9.5 A1 1 0 0 1 14 9.5 A2 2 0 0 1 10 9.5 A3 3 0 0 1 16 9.5" class="p1"/><path d="M12 22 C12 22 4.5 14.5 4.5 9.5 A7.5 7.5 0 0 1 19.5 9.5 C19.5 14.5 12 22 12 22 Z M12 9.5 A1 1 0 0 1 14 9.5 A2 2 0 0 1 10 9.5 A3 3 0 0 1 16 9.5" class="p2"/></svg>
+      <figcaption><b>C · Swirl pin</b>a map pin with a swirl</figcaption><span class="tiny"><svg viewBox="0 0 24 24"><path d="M12 22 C12 22 4.5 14.5 4.5 9.5 A7.5 7.5 0 0 1 19.5 9.5 C19.5 14.5 12 22 12 22 Z M12 9.5 A1 1 0 0 1 14 9.5 A2 2 0 0 1 10 9.5 A3 3 0 0 1 16 9.5" class="p1"/><path d="M12 22 C12 22 4.5 14.5 4.5 9.5 A7.5 7.5 0 0 1 19.5 9.5 C19.5 14.5 12 22 12 22 Z M12 9.5 A1 1 0 0 1 14 9.5 A2 2 0 0 1 10 9.5 A3 3 0 0 1 16 9.5" class="p2"/></svg><b>3</b></span></figure>
+  </div></section>
+<p class="intro">The same overlay in four looks, on the same sample page: a pinned button with its badge and outline, the note card with Change it here, the hover outline on a link, the bar and the dot, the Pins list, an answer from the agent, the badge for each state, and a 3D object outlined.</p>
+
+<!-- the scene and sheet are the same markup in every board; only the tokens and outline differ -->
+<template id="scene">
+  <div class="app">
+    <h3>Plan and billing</h3><p class="sub">You're on Team, billed monthly.</p>
+    <div class="row"><div class="plan"><b>Team</b>$24 per seat · 6 seats</div><div class="plan"><b>Next invoice</b>Nov 1 · $144</div></div>
+    <div class="row"><div class="toggle"></div> Yearly billing <span class="link" data-hover>save 8%</span></div>
+    <div class="row" style="margin-top:22px"><button class="save" data-pinned>Save</button> <span style="color:#6b7280">Changes apply next cycle</span></div>
+    <div class="ov">
+      <span class="badge" style="left:14px;top:178px">1</span>
+      <div class="card" style="left:130px;top:300px">
+        <p class="t">Save button</p><div class="src">BillingForm.tsx:42</div>
+        <div class="note">make it the obvious next step</div>
+        <div class="chips"><span class="chip">Edit text</span><span class="chip">Hide</span><span class="chip on">Shape</span><span class="chip">↑</span><span class="chip">↓</span><span class="chip">Copy look</span></div>
+        <div class="changed">corner radius 6 → 10px · width 66 → 120px</div>
+        <div class="keys"><span>⌥-click again: deeper</span><span class="done">Done</span></div>
+      </div>
+    </div>
+  </div>
+</template>
+<template id="sheet">
+  <div class="tile wide"><span class="label">bar, while you use it</span><span class="bar"><span class="brand">unide</span><button>Pin</button><button>Pins 3</button><button class="primary">Send 2</button><button>Freeze</button></span></div>
+  <div class="tile"><span class="label">idle dot</span><span class="dot">u<b>0</b></span> &nbsp; <span class="dot">u<b class="has">3</b></span></div>
+  <div class="tile wide"><span class="label">pins list</span><div class="list">
+    <div class="item"><span class="badge">1</span><div>make it the obvious next step<small>not sent</small></div><span class="x">×</span></div>
+    <div class="item"><span class="badge" style="background:var(--accent2);color:#fff;border-color:var(--accent2)">2</span><div>logo too close to the edge<small>sent: waiting for the agent</small></div><span class="x">×</span></div></div></div>
+  <div class="tile"><span class="label">agent answer</span><span class="toast">✓ #3 done: Save is now the primary button</span></div>
+  <div class="tile"><span class="label">badge states</span><div class="states"><span class="badge">1</span><span>draft</span><span class="badge" style="background:var(--accent2);color:#fff;border-color:var(--accent2)">2</span><span>sent</span><span class="badge" style="background:var(--soft);color:#fff;border-color:var(--soft)">3</span><span>skipped</span></div></div>
+  <div class="tile"><span class="label">palette</span><div class="swatches"><div class="sw" style="background:var(--bg);color:var(--ink)"><i>bg</i></div><div class="sw" style="background:var(--card);color:var(--card-ink)"><i>card</i></div><div class="sw" style="background:var(--accent);color:var(--on-accent)"><i>accent</i></div><div class="sw" style="background:var(--accent2);color:#fff"><i>second</i></div></div></div>
+  <div class="tile spec"><span class="label">type</span><p class="big">Aa unide</p><p class="body">make it the obvious next step</p><span class="code">BillingForm.tsx:42</span></div>
+  <div class="tile wide"><span class="label">3d object, outlined by its shape</span><svg class="mark3d" viewBox="0 0 520 150" data-3d></svg></div>
+</template>
+
+<section class="board ink" id="ink"><div class="head"><h2>Ink and paper</h2><p>Warm paper, red ink, serif notes. Outlines are drawn by hand, badges are stamps. Calm on top of almost any page.</p></div><div class="grid"><div class="tile" data-scene="ink"></div><div class="sheet" data-sheet></div></div></section>
+<section class="board riso" id="riso"><div class="head"><h2>Riso poster</h2><p>Two print inks, pink and blue, slightly off register. Mono type and thick black edges. Loud and confident.</p></div><div class="grid"><div class="tile" data-scene="riso"></div><div class="sheet" data-sheet></div></div></section>
+<section class="board mood" id="mood"><div class="head"><h2>Moodboard</h2><p>Pushpins for badges, sticky notes for cards, tape and handwriting. Feels like your own board.</p></div><div class="grid"><div class="tile" data-scene="mood"></div><div class="sheet" data-sheet></div></div></section>
+<section class="board studio" id="studio"><div class="head"><h2>Studio grid</h2><p>Black, white and one signal orange. Crop marks instead of boxes, numbers like a print run. Precise.</p></div><div class="grid"><div class="tile" data-scene="studio"></div><div class="sheet" data-sheet></div></div></section>
+</main>
+
+<script>
+// the outline around the pinned button, the hover outline on the link, and the 3D outline: drawn per look
+const OUTLINE = {
+  ink: (w, h) => `<svg width="${w + 34}" height="${h + 26}" viewBox="0 0 ${w + 34} ${h + 26}" style="position:absolute;left:-17px;top:-13px;pointer-events:none"><path d="M10 ${h / 2 + 13} C7 6,${w * .7} 3,${w + 24} 12 C${w + 34} ${h / 2 + 10},${w + 20} ${h + 24},${w / 2} ${h + 22} C14 ${h + 24},3 ${h},11 ${h / 2} C14 10,30 7,46 8" fill="none" stroke="#c8361b" stroke-width="2.3" stroke-linecap="round"/></svg>`,
+  riso: (w, h) => `<span style="position:absolute;left:-7px;top:-7px;width:${w + 10}px;height:${h + 10}px;border:3px solid #ff48b0;border-radius:9px;pointer-events:none"></span><span style="position:absolute;left:-3px;top:-3px;width:${w + 10}px;height:${h + 10}px;border:3px solid #0078bf;border-radius:9px;mix-blend-mode:multiply;pointer-events:none"></span>`,
+  mood: (w, h) => `<span style="position:absolute;left:-8px;top:-8px;width:${w + 16}px;height:${h + 16}px;border:3px dashed #d9352b;border-radius:14px;pointer-events:none"></span>`,
+  studio: (w, h) => `<svg width="${w + 20}" height="${h + 20}" viewBox="0 0 ${w + 20} ${h + 20}" style="position:absolute;left:-10px;top:-10px;pointer-events:none"><path d="M0 10V0H10M${w + 10} 0H${w + 20}V10M${w + 20} ${h + 10}V${h + 20}H${w + 10}M10 ${h + 20}H0V${h + 10}" stroke="#ff4f00" stroke-width="2.5" fill="none"/></svg><span style="position:absolute;left:${w + 16}px;top:-10px;font:11px 'Space Mono';color:#ff4f00;white-space:nowrap">01 — button</span>`,
+};
+const HOVER = {
+  ink: 'text-decoration:underline wavy #c8361b; text-underline-offset:5px;',
+  riso: 'background:#0078bf; color:#fff; padding:1px 4px;',
+  mood: 'background:#ffe680; padding:1px 4px; transform:rotate(-1deg); display:inline-block;',
+  studio: 'outline:1.5px solid #ff4f00; outline-offset:3px;',
+};
+// a mountain, outlined the way each look outlines 3D objects
+const MOUNTAIN = 'M40 135 L150 40 L190 75 L245 20 L320 95 L360 70 L470 135 Z';
+const THREED = {
+  ink: `<path d="${MOUNTAIN}" fill="#2f6f5e"/><path d="M228 36 L245 20 L262 37 L250 33 L240 40 Z M140 49 L150 40 L162 51 L152 48 Z" fill="#fbf8f1"/><path d="M34 138 C30 120,148 30,152 34 C170 52,186 66,192 70 C214 40,236 14,247 15 C280 50,312 84,320 90 C336 78,352 64,362 66 C410 98,470 128,476 140 C300 146,130 146,30 140" fill="none" stroke="#c8361b" stroke-width="2.3" stroke-linecap="round"/>`,
+  riso: `<path d="${MOUNTAIN}" fill="#7fb8d8"/><path d="${MOUNTAIN}" fill="none" stroke="#ff48b0" stroke-width="4" transform="translate(-3 -3)"/><path d="${MOUNTAIN}" fill="none" stroke="#0078bf" stroke-width="4" transform="translate(3 3)" style="mix-blend-mode:multiply"/>`,
+  mood: `<path d="${MOUNTAIN}" fill="#6b8f5a"/><path d="${MOUNTAIN}" fill="none" stroke="#d9352b" stroke-width="3" stroke-dasharray="9 6" transform="translate(0 -1) scale(1.0)"/><circle cx="245" cy="14" r="8" fill="#d9352b"/><circle cx="242" cy="11" r="2.5" fill="#fff" opacity=".6"/>`,
+  studio: `<path d="${MOUNTAIN}" fill="#d9d9d6"/><path d="${MOUNTAIN}" fill="none" stroke="#ff4f00" stroke-width="2.5"/><text x="40" y="18" font-family="Space Mono" font-size="11" fill="#ff4f00">02 — mount-fuji · MountFuji.tsx:58</text>`,
+};
+for (const board of document.querySelectorAll('.board:has([data-scene])')) {
+  const look = board.id;
+  const scene = board.querySelector('[data-scene]'), sheet = board.querySelector('[data-sheet]');
+  scene.innerHTML = `<span class="label">on a page</span>` + document.getElementById('scene').innerHTML;
+  sheet.innerHTML = document.getElementById('sheet').innerHTML;
+  const save = scene.querySelector('[data-pinned]');
+  // the badge sits on the button's corner, the outline around it
+  const badge = scene.querySelector('.ov .badge');
+  Object.assign(badge.style, { left: '-13px', top: '-13px' });
+  requestAnimationFrame(() => { save.insertAdjacentHTML('beforeend', OUTLINE[look](save.offsetWidth, save.offsetHeight)); save.append(badge); });
+  scene.querySelector('[data-hover]').style.cssText += HOVER[look];
+  sheet.querySelector('[data-3d]').innerHTML = THREED[look];
+}
+</script>
+<script type="module">
+  // option A is drawn by the same code as unide's own mark
+  import { whirl } from '/__unide/styles.js';
+  const a = document.querySelectorAll('.logos figure:first-child svg');
+  a.forEach((svg, i) => { svg.innerHTML = whirl(`mb${i}`); });
+</script>
+</body>
+</html>

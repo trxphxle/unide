@@ -1,0 +1,9 @@
+/* C5: a three-step variable chain. The button's colour is written on line 4, three names away. */
+:root {
+  --brand-violet: #6a4cff;
+  --accent: var(--brand-violet);
+  --cta-bg: var(--accent);
+  --page: #f6f5f2;
+  --ink: #1b1b1f;
+  --muted: #6b6b75;
+}

@@ -1,0 +1,10 @@
+# dependencies
+node_modules/
+# what unide keeps per project: pins, screenshots, dropped images (never committed)
+.unide/
+# data from the retired Tools panel
+requests/
+store/
+# local editor and OS files
+.claude/
+.DS_Store
