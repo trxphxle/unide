@@ -8,3 +8,11 @@ store/
 # local editor and OS files
 .claude/
 .DS_Store
+# rendered demo films (large; kept out of git)
+design/demo/out/
+design/demo/film/frames/
+design/demo/film/out/
+design/demo/film/stills/
+design/demo/film/*.wav
+design/demo/film/*.json
+design/demo/film/*.jpg

@@ -8,9 +8,9 @@ You need Node 20 or newer.
 
 1. **Install unide** (once per computer):
    ```sh
-   npm install -g @treearc/unide
+   npm install -g github:trxphxle/unide
    ```
-   Until it's published, install it from this folder instead: `npm link` here.
+   Or a fixed version: the `.tgz` on the [Releases page](https://github.com/trxphxle/unide/releases), with `npm install -g <its link>`. Working on unide itself? `npm link` in this folder.
 2. **Set up a project** (once per project):
    ```sh
    cd your-project
@@ -117,8 +117,12 @@ Screenshots are drawn from the page itself when you pin (no permission prompt, n
 
 `unide init` · `unide` (start it here and print the link) · `unide remove` · `unide mcp` (started by your agent tools)
 
-Installed with `npm link` in this folder. Requires Node 20 or later.
+Installed with `npm install -g github:trxphxle/unide` (or `npm link` in this folder). Requires Node 20 or later.
 
 ## Code
 
 `bin/unide.mjs` (commands) · `lib/server.mjs` (static pages or the dev-server proxy, pins API, live reload) · `lib/devserver.mjs` (finding and starting dev servers) · `lib/routes.mjs` (framework routes) · `lib/pins.mjs` · `lib/mcp.mjs` (stdio MCP) · `lib/init.mjs` (init and remove) · `lib/locate.mjs` and `lib/sourcemap.mjs` (where code and styles are written) · `overlay/` (the page overlay, ES modules: `pins.js` is the default view, `components.js` and `stylesource.js` read components and style sources, `shot.js` takes the screenshots with the vendored `snapdom.js` (MIT), `freeze.js` and `early.js` (a plain script at the top of `<head>`, before the page's own) hold the page still, `layers.js` finds what's under the pointer, `edits.js` is Change it here, `three.js` finds 3D objects in three.js canvases, `dock.js` places the bar, `styles.js` is the look). The retired Tools panel is in the first commit of this repository. `fixtures/hard-ui/` is a Vite + React app of cases that are hard to pin, with `RESULTS.md`: what unide does on each.
+
+## Licence
+
+MIT: see [LICENSE](LICENSE). `overlay/snapdom.js` is snapDOM, also MIT ([its licence](overlay/snapdom.LICENSE)).

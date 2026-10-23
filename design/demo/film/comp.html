@@ -1,0 +1,490 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>unide film</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&family=Inter:wght@400;600;800&display=block">
+<style>
+  :root { --pink:#ff48b0; --blue:#0078bf; --ink:#161616; --paper:#f1ebdf; --sun:#ffd400; --disp:'Archivo Black', 'Arial Black', sans-serif; --mono:'Space Mono', monospace; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; width:1920px; height:1080px; overflow:hidden; background:var(--paper); }
+  #stage { position:absolute; inset:0; overflow:hidden; perspective:2600px; perspective-origin:960px 512px; }
+  canvas#bg { position:absolute; inset:0; }
+  #cam { position:absolute; inset:0; transform-origin:960px 512px; }
+  #win { position:absolute; left:0; top:0; width:1608px; height:952px; border:4px solid var(--ink); background:#fff; transform-origin:0 0; box-shadow:18px 18px 0 var(--blue); }
+  #win .chrome { position:absolute; left:0; top:0; right:0; height:44px; border-bottom:3px solid var(--ink); display:flex; align-items:center; gap:10px; padding:0 16px; background:#fff; }
+  #win .dot { width:15px; height:15px; border-radius:50%; border:2.5px solid var(--ink); }
+  #win .url { margin:0 auto; width:520px; height:28px; border:2.5px solid var(--ink); display:flex; align-items:center; justify-content:center; gap:8px; font:400 15px var(--mono); color:var(--ink); }
+  #win .url i { width:10px; height:12px; border:2px solid var(--ink); border-radius:2px; position:relative; top:1px; }
+  #win .mini { width:30px; height:30px; }
+  #win .screen { position:absolute; left:0; top:44px; width:1600px; height:900px; overflow:hidden; background:#f6f3ec; }
+  #win .screen img { position:absolute; inset:0; width:1600px; height:900px; }
+  .scene { position:absolute; inset:0; display:none; }
+  .reg { position:relative; display:inline-block; white-space:nowrap; }
+  .reg > span { display:block; }
+  .reg > span:not(:last-child) { position:absolute; left:0; top:0; mix-blend-mode:multiply; }
+  .reg > .p { color:var(--pink); } .reg > .b { color:var(--blue); } .reg > .k { color:var(--ink); position:relative; }
+  .center { position:absolute; left:0; top:0; transform-origin:0 0; }
+
+  /* open */
+  #o-logo { position:absolute; width:560px; height:560px; left:680px; top:232px; }
+  #o-word { position:absolute; font:400 270px/1 var(--disp); letter-spacing:-.02em; }
+  #o-tag { position:absolute; font:700 48px var(--mono); color:var(--ink); white-space:pre; }
+  #o-tag b { background:var(--sun); font:inherit; padding:0 6px; }
+
+  /* problem */
+  #chat { position:absolute; left:560px; top:110px; width:800px; height:860px; background:#fff; border:4px solid var(--ink); box-shadow:18px 18px 0 var(--pink); display:flex; flex-direction:column; }
+  #chat .head { height:64px; border-bottom:3px solid var(--ink); display:flex; align-items:center; padding:0 22px; gap:12px; font:700 22px var(--mono); }
+  #chat .head i { width:14px; height:14px; border-radius:50%; background:var(--pink); border:2px solid var(--ink); }
+  #chat .msgs { flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:16px; padding:22px; overflow:hidden; }
+  .bub { max-width:78%; padding:14px 20px; font:600 27px/1.3 Inter, sans-serif; border:3px solid var(--ink); display:none; transform-origin:100% 100%; }
+  .bub.u { align-self:flex-end; background:var(--pink); color:var(--ink); }
+  .bub.a { align-self:flex-start; background:#fff; color:var(--ink); box-shadow:6px 6px 0 var(--blue); transform-origin:0 100%; }
+  .bub.a small { display:block; font:700 15px var(--mono); color:#7b776f; margin-bottom:4px; }
+  #stop { position:absolute; left:0; top:0; font:400 150px/1 var(--disp); background:var(--pink); color:var(--ink); padding:24px 40px 30px; border:6px solid var(--ink); box-shadow:20px 20px 0 var(--ink); white-space:nowrap; transform-origin:50% 50%; }
+  #start { position:absolute; font:400 190px/1 var(--disp); letter-spacing:-.02em; }
+  #bigcur { position:absolute; width:220px; height:220px; filter:drop-shadow(10px 14px 0 rgba(22,22,22,.9)); }
+  .ring { position:absolute; border-radius:50%; border:10px solid var(--pink); box-shadow:0 0 0 6px var(--blue); }
+
+  /* send */
+  #sc-send { background:var(--blue); }
+  #sc-send .dots { position:absolute; inset:-40px; background-image:radial-gradient(circle, rgba(255,255,255,.16) 0 4px, transparent 5px); background-size:26px 26px; }
+  .cap3 { position:absolute; width:300px; height:300px; background:#fff; border:8px solid var(--ink); box-shadow:22px 22px 0 var(--pink); display:grid; place-items:center; font:400 180px/1 var(--disp); color:var(--ink); }
+  .cap3 small { position:absolute; bottom:22px; left:0; right:0; text-align:center; font:700 30px var(--mono); }
+  #plus { position:absolute; font:400 140px/1 var(--disp); color:#fff; }
+  #s-title { position:absolute; left:0; right:0; text-align:center; font:400 118px/1 var(--disp); color:#fff; }
+  .row { position:absolute; left:0; white-space:nowrap; font:400 96px/1 var(--disp); color:var(--ink); }
+  .row span { margin-right:60px; }
+  .row .o { color:transparent; -webkit-text-stroke:3px #fff; }
+  .row .w { color:#fff; } .row .p { color:var(--pink); }
+
+  /* agent */
+  #term { position:absolute; left:220px; top:96px; width:1480px; height:800px; background:#121212; border:5px solid var(--ink); box-shadow:20px 20px 0 var(--pink), 40px 40px 0 var(--blue); transform-origin:50% 50%; overflow:hidden; }
+  #term .tb { height:52px; background:#1e1e1e; border-bottom:3px solid #000; display:flex; align-items:center; gap:10px; padding:0 18px; font:700 18px var(--mono); color:#9b978f; }
+  #term .tb i { width:15px; height:15px; border-radius:50%; }
+  #term .tb span { margin:0 auto; }
+  #lines { position:absolute; left:34px; right:34px; top:76px; font:400 23px/1.5 var(--mono); color:#e9e5dc; }
+  #lines div { white-space:pre; display:none; height:34.5px; }
+  .t-p { color:#fff; font-weight:700; } .t-tool { color:var(--pink); font-weight:700; } .t-dim { color:#8f8b83; } .t-del { color:#ff8da8; background:rgba(255,72,120,.14); } .t-add { color:#7fd3ff; background:rgba(0,120,191,.22); } .t-ok { color:#7ee2a8; } .t-q { color:#ffd76a; }
+  .caret { display:inline-block; width:13px; height:26px; background:#fff; vertical-align:-5px; }
+
+  /* works */
+  #w-word { position:absolute; font:400 230px/1 var(--disp); letter-spacing:-.02em; white-space:nowrap; }
+  #w-end { position:absolute; left:0; right:0; text-align:center; }
+  #w-end div { font:400 210px/1.02 var(--disp); letter-spacing:-.02em; }
+
+  /* outro */
+  #e-logo { position:absolute; width:420px; height:420px; }
+  #e-word { position:absolute; font:400 250px/1 var(--disp); letter-spacing:-.02em; }
+  #e-tag { position:absolute; left:0; right:0; text-align:center; font:700 50px var(--mono); color:var(--ink); }
+  #e-cmd { position:absolute; left:50%; font:700 40px var(--mono); background:var(--ink); color:#fff; padding:18px 34px; border:4px solid var(--ink); box-shadow:12px 12px 0 var(--pink); white-space:pre; transform:translateX(-50%); }
+  #e-cmd b { color:var(--pink); font:inherit; }
+  #e-small { position:absolute; left:0; right:0; text-align:center; font:700 30px var(--mono); color:var(--ink); }
+
+  /* overlays */
+  #stamp { position:absolute; left:46px; top:22px; display:flex; align-items:center; gap:16px; transform-origin:60px 60px; }
+  #stamp .n { width:92px; height:92px; border-radius:50%; background:var(--pink); border:4px solid var(--ink); display:grid; place-items:center; font:400 40px/1 var(--disp); color:var(--ink); box-shadow:6px 6px 0 var(--blue); }
+  #stamp .l { font:400 44px/1 var(--disp); color:var(--ink); text-transform:uppercase; background:var(--paper); padding:4px 10px; border:4px solid var(--ink); }
+  #cap { position:absolute; left:262px; bottom:24px; display:grid; gap:10px; justify-items:start; }
+  #cap b { font:400 56px/1.08 var(--disp); color:#fff; background:var(--ink); padding:10px 24px 14px; box-shadow:10px 10px 0 var(--pink); white-space:nowrap; }
+  #cap span { font:400 26px/1.3 var(--mono); color:var(--ink); background:#fff; border:4px solid var(--ink); padding:6px 16px; box-shadow:7px 7px 0 var(--blue); white-space:nowrap; }
+  #keys { position:absolute; right:70px; bottom:40px; display:flex; gap:18px; }
+  .key { width:132px; height:132px; background:#fff; border:5px solid var(--ink); box-shadow:10px 10px 0 var(--blue); display:none; flex-direction:column; align-items:center; justify-content:center; font:400 66px/1 var(--disp); color:var(--ink); }
+  .key.down { background:var(--pink); }
+  .key small { font:700 18px var(--mono); margin-top:8px; }
+  #quote { position:absolute; right:64px; top:28px; max-width:900px; background:var(--sun); border:5px solid var(--ink); box-shadow:12px 12px 0 var(--ink); padding:16px 26px 20px; font:400 50px/1.12 var(--disp); color:var(--ink); transform-origin:100% 0; }
+  #quote small { display:block; font:700 18px var(--mono); margin-bottom:6px; letter-spacing:.06em; }
+  #glitch { position:absolute; inset:0; pointer-events:none; }
+  #glitch i { position:absolute; left:0; right:0; mix-blend-mode:multiply; }
+  .wipe { position:absolute; inset:0; }
+  #flash { position:absolute; inset:0; background:#fff; opacity:0; }
+  #grain { position:absolute; inset:0; width:1920px; height:1080px; mix-blend-mode:multiply; opacity:.18; }
+  #vig { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 48%, transparent 58%, rgba(40,30,20,.20) 100%); }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><filter id="mb" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feGaussianBlur id="mbg" stdDeviation="0 0"/></filter></svg>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <div id="cam"><div id="win">
+    <div class="chrome"><span class="dot" style="background:var(--pink)"></span><span class="dot" style="background:var(--sun)"></span><span class="dot" style="background:var(--blue)"></span>
+      <div class="url"><i></i>localhost:5173</div><svg class="mini whirl" viewBox="0 0 24 24"></svg></div>
+    <div class="screen"><img id="shot" alt=""></div>
+  </div></div>
+
+  <div id="sc-open" class="scene">
+    <svg id="o-logo" class="whirl" viewBox="0 0 24 24"></svg>
+    <div id="o-word" class="reg"><span class="p">unide</span><span class="b">unide</span><span class="k">unide</span></div>
+    <div id="o-tag"></div>
+  </div>
+  <div id="sc-problem" class="scene">
+    <div id="chat"><div class="head"><i></i>Chat with your agent</div><div class="msgs"></div></div>
+    <div id="stop">STOP DESCRIBING.</div>
+    <div id="start" class="reg"><span class="p">START POINTING.</span><span class="b">START POINTING.</span><span class="k">START POINTING.</span></div>
+    <div class="ring" id="ring1"></div><div class="ring" id="ring2"></div>
+    <svg id="bigcur" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 14.8 L11.6 21.5 L14.4 20.3 L11.4 13.7 L17.5 13.6 Z" fill="#fff" stroke="#161616" stroke-width="1.5" stroke-linejoin="round"/></svg>
+  </div>
+  <div id="sc-send" class="scene"><div class="dots"></div>
+    <div class="cap3" id="k1">⌘<small>Command</small></div><div id="plus">+</div><div class="cap3" id="k2">↩<small>Return</small></div>
+    <div id="s-title">Sent. Straight to your agent.</div>
+    <div class="row" id="r1"></div><div class="row" id="r2"></div><div class="row" id="r3"></div>
+  </div>
+  <div id="sc-agent" class="scene">
+    <div id="term"><div class="tb"><i style="background:var(--pink)"></i><i style="background:var(--sun)"></i><i style="background:var(--blue)"></i><span>your agent · ~/halo</span></div><div id="lines"></div></div>
+  </div>
+  <div id="sc-works" class="scene">
+    <div id="w-word" class="reg"><span class="p"></span><span class="b"></span><span class="k"></span></div>
+    <div id="w-end"><div class="reg" id="w-a"><span class="p">Any page.</span><span class="b">Any page.</span><span class="k">Any page.</span></div><br><div class="reg" id="w-b"><span class="p">Any agent.</span><span class="b">Any agent.</span><span class="k">Any agent.</span></div></div>
+  </div>
+  <div id="sc-outro" class="scene">
+    <svg id="e-logo" class="whirl" viewBox="0 0 24 24"></svg>
+    <div id="e-word" class="reg"><span class="p">unide</span><span class="b">unide</span><span class="k">unide</span></div>
+    <div id="e-tag">Point at it. Your agent gets it.</div>
+    <div id="e-cmd"></div>
+    <div id="e-small">Claude Code · Codex · Cursor · Gemini · any MCP agent</div>
+  </div>
+
+  <div id="glitch"></div>
+  <div id="stamp"><div class="n">01</div><div class="l">Pin</div></div>
+  <div id="quote"><small>YOU SAID</small><span></span></div>
+  <div id="cap"><b></b><span></span></div>
+  <div id="keys"></div>
+  <div class="wipe" id="w1" style="background:var(--pink)"></div><div class="wipe" id="w2" style="background:var(--blue)"></div><div class="wipe" id="w3" style="background:var(--ink)"></div>
+  <div id="flash"></div><div id="fade" style="position:absolute;inset:0;background:#f1ebdf;opacity:0"></div>
+  <div id="vig"></div>
+  <canvas id="grain" width="960" height="540"></canvas>
+</div>
+<script>
+// ---------- helpers ----------
+const $ = (s) => document.querySelector(s);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const eOut = (p) => 1 - Math.pow(1 - p, 3), eIn = (p) => p * p * p, eIO = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const eExpo = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const eBack = (p) => { const c = 2.2, c3 = c + 1; return 1 + c3 * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const show = (el, on) => { if (!on) { el.style.display = 'none'; return; } el.style.display = ''; if (getComputedStyle(el).display === 'none') el.style.display = 'block'; };
+function setReg(el, d, ang = 0.6) { const [p, b] = el.children; const dx = Math.cos(ang) * d, dy = Math.sin(ang) * d; p.style.transform = `translate(${-dx}px,${-dy}px)`; b.style.transform = `translate(${dx}px,${dy}px)`; }
+
+// the whirlpool, as in unide's mark
+const ARMS = [['#0078bf', 1.3], ['#5aaee0', .7], ['#00508a', 1], ['#ff48b0', .8], ['#0078bf', .6], ['#7cc2ec', 1.1], ['#00508a', .7], ['#0078bf', .9], ['#ff48b0', .6], ['#3d94cf', 1]];
+function arm(turn) { const pts = []; for (let i = 0; i <= 64; i++) { const t = (i / 64) * 3.2 * Math.PI, r = 0.5 * Math.exp(0.31 * t), a = t + turn; pts.push(`${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + r * Math.sin(a)).toFixed(2)}`); } return 'M' + pts.join(' L'); }
+document.querySelectorAll('svg.whirl').forEach((s, n) => { const id = 'w' + n; s.innerHTML = `<defs><radialGradient id="${id}g"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><mask id="${id}m"><circle cx="12" cy="12" r="11.5" fill="url(#${id}g)"/></mask></defs><g mask="url(#${id}m)"><g class="vortex" fill="none" stroke-linecap="round">${ARMS.map(([c, w], i) => `<path d="${arm((i / ARMS.length) * 2 * Math.PI)}" stroke="${c}" stroke-width="${w}"/>`).join('')}</g></g>`; });
+const spin = (svg, deg) => svg.querySelector('.vortex').setAttribute('transform', `rotate(${deg} 12 12)`);
+
+// ---------- background: two halftone screens, like riso drums ----------
+const bg = $('#bg').getContext('2d');
+function halftone(t, o) {
+  bg.globalCompositeOperation = 'source-over'; bg.fillStyle = o.paper || '#f1ebdf'; bg.fillRect(0, 0, 1920, 1080);
+  bg.globalCompositeOperation = 'multiply';
+  for (const L of o.layers) {
+    const ca = Math.cos(L.ang), sa = Math.sin(L.ang), sp = L.sp; bg.fillStyle = L.col;
+    bg.beginPath();
+    for (let i = -70; i <= 70; i++) for (let j = -70; j <= 70; j++) {
+      const gx = i * sp, gy = j * sp, x = 960 + gx * ca - gy * sa, y = 540 + gx * sa + gy * ca;
+      if (x < -20 || x > 1940 || y < -20 || y > 1100) continue;
+      let f = L.base || 0;
+      if (o.clear) { const dx = x - 960, dy = y - 520; f -= o.clear * Math.exp(-(dx * dx * 0.45 + dy * dy) / (2 * 420 * 420)); }
+      for (const B of L.blobs) { const bx = B.x + Math.sin(t * B.fx + B.p) * B.ax, by = B.y + Math.cos(t * B.fy + B.p) * B.ay, dx = x - bx, dy = y - by; f += B.a * Math.exp(-(dx * dx + dy * dy) / (2 * B.s * B.s)); }
+      const r = sp * 0.44 * Math.sqrt(cl(f));
+      if (r < 0.5) continue;
+      bg.moveTo(x + r, y); bg.arc(x, y, r, 0, Math.PI * 2);
+    }
+    bg.fill();
+  }
+  bg.globalCompositeOperation = 'source-over';
+}
+const BLOBS = (k) => ({
+  pink: [{ x: 300, y: 250, s: 330 * k, a: 0.75, fx: 0.31, fy: 0.23, ax: 220, ay: 140, p: 0 }, { x: 1650, y: 900, s: 280 * k, a: 0.55, fx: 0.27, fy: 0.35, ax: 180, ay: 120, p: 2 }],
+  blue: [{ x: 1600, y: 200, s: 340 * k, a: 0.7, fx: 0.22, fy: 0.29, ax: 200, ay: 160, p: 1 }, { x: 380, y: 940, s: 300 * k, a: 0.5, fx: 0.33, fy: 0.21, ax: 160, ay: 120, p: 3 }],
+});
+function bgFor(kind, lt, t) {
+  const k = kind === 'foot' ? 0.9 : kind === 'outro' || kind === 'open' ? 1.25 : 1, B = BLOBS(k);
+  const amp = kind === 'foot' || kind === 'agent' ? 0.42 : 0.78;
+  B.pink.forEach((b) => (b.a *= amp)); B.blue.forEach((b) => (b.a *= amp));
+  const clear = { open: 0.9, outro: 0.9, problem: 0.5, works: 0.8 }[kind] || 0;
+  return { clear, layers: [{ col: '#ff48b0', ang: 0.26, sp: 20, blobs: B.pink }, { col: '#0078bf', ang: 1.31, sp: 20, blobs: B.blue }] };
+}
+
+// ---------- grain ----------
+const gr = $('#grain').getContext('2d'), gimg = gr.createImageData(960, 540);
+function grain(i) {
+  let s = (i * 2654435761) >>> 0; const d = gimg.data;
+  for (let p = 0; p < d.length; p += 4) { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; const v = 222 + (s & 33); d[p] = d[p + 1] = d[p + 2] = v; d[p + 3] = 255; }
+  gr.putImageData(gimg, 0, 0);
+}
+
+// ---------- data ----------
+let D = null;
+const KEYS = { Alt: ['⌥', 'Option'], Shift: ['⇧', 'Shift'], Meta: ['⌘', 'Command'], Enter: ['↩', 'Return'], Escape: ['esc', 'Escape'] };
+const CHAT = [
+  ['u', 'make the button bigger'], ['a', 'Which button? I can see 14.'], ['u', 'the dark one. under the big title'], ['a', 'Done! I enlarged the footer button.'],
+  ['u', 'NOT that one 😩 the one next to “Watch the film”'], ['u', 'also the heading font feels off??'], ['a', 'Which heading do you mean?'],
+  ['u', 'the BIG one. top left. ugh'], ['u', 'and on phones the cards look squished'], ['a', 'Could you paste a screenshot?'],
+];
+const CHAT_T = [0.25, 0.75, 1.2, 1.62, 2.0, 2.34, 2.64, 2.9, 3.14, 3.36];
+const TERM = [
+  [0.1, 't-p', '> go ahead with my pins', 'type'],
+  [1.15, 't-tool', '⏺ unide · get_pins'],
+  [1.45, 't-dim', '  ⎿  ## Pin #1 · / · sent'],
+  [1.55, '', '     The user says: "make this the obvious next step"'],
+  [1.65, '', '     - probably a button `button.buy` ("Pre-order — $129")'],
+  [1.75, 't-dim', '       styled by `.buy` at index.html:26'],
+  [1.85, 't-q', '       changed by hand: background #3a3a44 → accent · size 16px → 20px'],
+  [2.0, 't-dim', '     ## Pin #2 · / · sent'],
+  [2.1, '', '     The user says: "a bit more character" · font → Fraunces'],
+  [2.25, 't-dim', '     ## Pin #4 · 3D "linen-shade" in canvas#viewer'],
+  [2.4, 't-dim', '     ## Pin #5 · seen at 390 × 844 (phone): "stack these on phones"'],
+  [3.0, 't-tool', '⏺ Update(index.html)'],
+  [3.2, 't-del', '  - .buy { background:#3a3a44; border-radius:8px; font:600 16px Inter }'],
+  [3.32, 't-add', '  + .buy { background:var(--accent); border-radius:999px; font:800 18px Inter }'],
+  [3.5, 't-del', "  - h1 { font:400 78px/0.98 'Instrument Serif', serif }"],
+  [3.62, 't-add', "  + h1 { font:400 80px/0.98 'Fraunces', serif }"],
+  [4.3, 't-tool', '⏺ unide · resolve_pin #1 addressed'],
+  [4.45, 't-ok', '  ⎿  "Pre-order is now the warm accent pill, bigger and bolder"'],
+  [4.9, 't-tool', '⏺ unide · resolve_pin #2 addressed'],
+  [5.05, 't-ok', '  ⎿  "Headline set in Fraunces"'],
+];
+const WORDS = ['HTML', 'Vite', 'Next.js', 'Nuxt', 'SvelteKit', 'Astro', 'Angular', 'React Router', 'three.js'];
+const WCOL = [['#ff48b0', '#161616'], ['#0078bf', '#ffffff'], ['#161616', '#ff48b0'], ['#ffd400', '#161616'], ['#f1ebdf', '#0078bf'], ['#ff48b0', '#ffffff'], ['#0078bf', '#ffd400'], ['#161616', '#ffffff'], ['#f1ebdf', '#ff48b0']];
+
+function setup(data) {
+  D = data;
+  $('#chat .msgs').innerHTML = CHAT.map(([w, t]) => `<div class="bub ${w}">${w === 'a' ? '<small>AGENT</small>' : ''}${t}</div>`).join('');
+  $('#lines').innerHTML = TERM.map(([, c, t]) => `<div class="${c}">${t.replace(/</g, '&lt;')}</div>`).join('');
+  const names = ['Claude Code', 'Codex', 'Cursor', 'Gemini', 'any MCP agent', 'AGENTS.md'];
+  const row = (cls) => Array.from({ length: 4 }, () => names.map((n, i) => `<span class="${cls[i % cls.length]}">${n} ✳</span>`).join('')).join('');
+  $('#r1').innerHTML = row(['w', 'o']); $('#r2').innerHTML = row(['o', 'p', 'w']); $('#r3').innerHTML = row(['p', 'w']);
+  $('#keys').innerHTML = Object.entries(KEYS).map(([k, [g, l]]) => `<div class="key" data-k="${k}">${g}<small>${l}</small></div>`).join('');
+  $('#glitch').innerHTML = Array.from({ length: 7 }, () => '<i></i>').join('');
+}
+
+// ---------- the frame ----------
+let shake = { x: 0, y: 0 };
+async function draw(n) {
+  const f = D.frames[n], t = f.t, sc = D.scenes[f.sc], lt = f.lt, kind = sc.kind;
+  shake = { x: 0, y: 0 }; $('#fade').style.opacity = 0;
+  document.querySelectorAll('.scene').forEach((s) => show(s, s.id === 'sc-' + kind));
+  halftone(t, bgFor(kind, lt, t));
+  // footage
+  show($('#cam'), kind === 'foot');
+  let loaded = null;
+  if (kind === 'foot') loaded = foot(f, sc, lt);
+  else SCENES[kind]?.(lt, sc.dur, t);
+  overlays(f, sc, t, lt);
+  const st = $('#stage'); st.style.transform = shake.x || shake.y ? `translate(${shake.x}px,${shake.y}px)` : '';
+  if (!window.__g) { grain(1); window.__g = 1; }
+  if (loaded) await loaded;
+  await new Promise((r) => requestAnimationFrame(() => r()));
+  return true;
+}
+
+function foot(f, sc, lt) {
+  const img = $('#shot'); let p = null;
+  if (img.dataset.src !== f.file) { img.dataset.src = f.file; img.src = 'file://' + f.file; p = img.decode().catch(() => {}); }
+  const c = f.cam, s = 0.858 * c.z, tx = 960 - c.x * s, ty = 512 - c.y * s;
+  const prev = D.scenes[D.frames.indexOf(f) && f.sc - 1];
+  // entrance: the window flies up out of the paper
+  let rx = 2.2 * Math.sin(f.t * 0.37) / c.z + 2.5 / c.z, ry = 2.4 * Math.sin(f.t * 0.29 + 1) / c.z, ey = 0, es = 1;
+  if (sc.in === 'fly') { const k = eExpo(seg(lt, 0, 1.0)); ey = (1 - k) * 1250; rx += (1 - k) * 48; ry += (1 - k) * -14; es = 0.75 + 0.25 * k; }
+  // glitch cuts: a jolt sideways
+  const g = glitchAge(f, sc, lt);
+  let gx = 0; if (g != null && g < 0.22) gx = (rnd(Math.floor(f.t * 30)) - 0.5) * 70 * (1 - g / 0.22);
+  $('#cam').style.transform = `translate(${gx}px,${ey}px) scale(${es}) rotateX(${rx}deg) rotateY(${ry}deg)`;
+  const win = $('#win');
+  win.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
+  const bx = c.bx / s, by = c.by / s;
+  if (bx > 0.6 || by > 0.6) { $('#mbg').setAttribute('stdDeviation', `${bx.toFixed(2)} ${by.toFixed(2)}`); win.style.filter = 'url(#mb)'; } else win.style.filter = '';
+  spin($('#win .mini'), -f.t * 120);
+  return p;
+}
+function glitchAge(f, sc, lt) {
+  if (sc.kind !== 'foot') return null;
+  const ages = []; if (sc.in === 'glitch') ages.push(lt);
+  for (const c of sc.cuts || []) if (f.t >= c) ages.push(f.t - c);
+  return ages.length ? Math.min(...ages) : null;
+}
+
+function overlays(f, sc, t, lt) {
+  // chapter stamp
+  const stp = $('#stamp'); show(stp, sc.kind === 'foot' && sc.ch);
+  if (sc.kind === 'foot' && sc.ch) {
+    stp.querySelector('.n').textContent = sc.ch[0]; stp.querySelector('.l').textContent = sc.ch[1];
+    const k = eBack(seg(lt, 0.05, 0.4)), out = seg(lt, sc.dur - 0.18, sc.dur);
+    stp.style.transform = `scale(${(0.2 + 0.8 * k) * (1 - out)}) rotate(${(1 - k) * -40 - 4}deg)`;
+    stp.style.opacity = lt < 0.05 ? 0 : 1;
+  }
+  // captions
+  const cap = $('#cap'); const cs = D.caps.filter((c) => t >= c.a && t < c.b).at(-1) || GCAPS.find((c) => t >= c.a && t < c.b);
+  show(cap, !!cs);
+  if (cs) {
+    cap.querySelector('b').textContent = cs.title; cap.querySelector('span').textContent = cs.sub; show(cap.querySelector('span'), !!cs.sub);
+    const a = t - cs.a, k = eExpo(seg(a, 0, 0.45)), k2 = eExpo(seg(a, 0.1, 0.55)), o = eIn(seg(t, cs.b - 0.22, cs.b));
+    cap.querySelector('b').style.transform = `translateX(${(1 - k) * -140}px) skewX(${(1 - k) * -14}deg) translateY(${o * 160}px)`;
+    cap.querySelector('span').style.transform = `translateX(${(1 - k2) * -140}px) translateY(${o * 160}px)`;
+    cap.style.opacity = k > 0 ? 1 : 0;
+  }
+  // keys
+  const keys = D.keys.filter((k) => t >= k.a - 0.02 && t < k.b + 0.22);
+  document.querySelectorAll('.key').forEach((el) => {
+    const k = keys.find((x) => x.k === el.dataset.k); show(el, !!k); if (!k) return;
+    el.style.display = 'flex';
+    const a = t - k.a, pop = eBack(seg(a, 0, 0.2)), out = seg(t, k.b, k.b + 0.22), down = t >= k.a + 0.06 && t < k.b;
+    el.classList.toggle('down', down);
+    el.style.transform = `translateY(${(down ? 8 : 0) + out * 40}px) scale(${(0.5 + 0.5 * pop) * (1 - out * 0.3)})`;
+    el.style.boxShadow = down ? '3px 3px 0 var(--blue)' : '10px 10px 0 var(--blue)';
+    el.style.opacity = 1 - out;
+  });
+  // the note being typed, said out loud
+  const q = $('#quote'), qq = D.quotes.find((x) => t >= x.a && t < x.hold + 0.25);
+  show(q, !!qq);
+  if (qq) {
+    const n = Math.round(qq.text.length * seg(t, qq.a, qq.b)), out = eIn(seg(t, qq.hold, qq.hold + 0.25)), k = eBack(seg(t, qq.a - 0.05, qq.a + 0.2));
+    q.querySelector('span').innerHTML = `“${qq.text.slice(0, n)}${n >= qq.text.length ? '”' : '<i class="caret" style="background:#161616;width:22px;height:44px;vertical-align:-6px"></i>'}`;
+    q.style.transform = `rotate(${2 - out * 6}deg) scale(${k * (1 - out)})`;
+  }
+  // glitch bands
+  const gl = $('#glitch'), g = glitchAge(f, sc, lt), on = g != null && g < 0.2;
+  show(gl, on);
+  if (on) [...gl.children].forEach((b, i) => { const r = rnd(i * 7 + Math.floor(t * 30) * 13); b.style.top = r * 1080 + 'px'; b.style.height = 8 + rnd(i + Math.floor(t * 30)) * 70 + 'px'; b.style.background = i % 2 ? 'rgba(255,72,176,.85)' : 'rgba(0,120,191,.85)'; b.style.transform = `translateX(${(rnd(i * 3 + t) - 0.5) * 300}px)`; });
+  if (on) { shake.x += (rnd(t * 91) - 0.5) * 24 * (1 - g / 0.2); }
+  // ink wipes and flashes at scene changes
+  wipes(t); flash(t);
+}
+function wipes(t) {
+  const W = ['#w1', '#w2', '#w3'].map((s) => $(s)); W.forEach((w) => show(w, false));
+  for (const sc of D.scenes) {
+    if (sc.in !== 'ink') continue;
+    const T = sc.start, d = t - T; if (d < -0.45 || d > 0.45) continue;
+    W.forEach((w, i) => {
+      show(w, true); let r, cx, cy;
+      if (d < 0) { const p = eIO(seg(d, -0.45 + i * 0.07, -0.02)); r = p * 2300; cx = 1920 * 0.85; cy = 1080 * 0.9; }
+      else { const p = eIO(seg(d, 0.02 + (2 - i) * 0.07, 0.45)); r = (1 - p) * 2300; cx = 1920 * 0.1; cy = 1080 * 0.1; }
+      w.style.clipPath = `circle(${r}px at ${cx}px ${cy}px)`;
+    });
+  }
+}
+function flash(t) {
+  let o = 0;
+  for (const sc of D.scenes) if (sc.in === 'flash' || sc.in === 'fly') { const d = t - sc.start; if (d >= 0 && d < 0.35) o = Math.max(o, 1 - d / 0.35); }
+  // the hard cut inside the problem scene
+  const pr = D.scenes.find((s) => s.kind === 'problem'); if (pr) { const d = t - (pr.start + 4.95); if (d >= 0 && d < 0.3) o = Math.max(o, 1 - d / 0.3); }
+  $('#flash').style.opacity = o;
+}
+// captions for the drawn scenes
+let GCAPS = [];
+function gcaps() {
+  const at = (k) => D.scenes.find((s) => s.kind === k);
+  const ag = at('agent');
+  GCAPS = ag ? [{ a: ag.start + 0.5, b: ag.start + ag.dur - 0.1, title: 'Your agent gets all of it.', sub: 'The element, its file:line, your words, what you changed by hand.' }] : [];
+}
+
+// ---------- drawn scenes ----------
+const SCENES = {
+  open(lt, dur) {
+    const logo = $('#o-logo'), word = $('#o-word'), tag = $('#o-tag');
+    const grow = eBack(seg(lt, 0.05, 0.95)), slam = seg(lt, 1.0, 1.24), move = eExpo(seg(lt, 1.0, 1.45));
+    const sz = 560 * (grow * (1.05 - 0.45 * move));
+    const cx = 960 - 420 * move, cy = 512 - 30 * move, push = 1 + 0.05 * eIO(seg(lt, 2.6, dur));
+    logo.style.width = logo.style.height = sz + 'px'; logo.style.left = cx - sz / 2 + 'px'; logo.style.top = cy - sz / 2 + 'px';
+    spin(logo, -(lt * 150 + 900 * (1 - Math.exp(-lt * 2.2))));
+    show(word, lt >= 1.0);
+    const ws = 2.7 - 1.7 * eOut(slam);
+    word.style.left = 960 + 175 * push + 'px'; word.style.top = 512 - 30 + 'px';
+    word.style.transform = `translate(-50%,-55%) scale(${ws * push})`;
+    setReg(word, (1 - eOut(seg(lt, 1.0, 1.7))) * 30 + 4 + Math.sin(lt * 9) * 1.5);
+    if (lt >= 1.0 && lt < 1.35) { const k = 1 - (lt - 1.0) / 0.35; shake.x = (rnd(lt * 77) - 0.5) * 40 * k; shake.y = (rnd(lt * 53) - 0.5) * 40 * k; }
+    const txt = 'Point at it. Your agent gets it.', n = Math.round(txt.length * seg(lt, 1.9, 2.9));
+    tag.innerHTML = n <= 13 ? txt.slice(0, n) : txt.slice(0, 13) + '<b>' + txt.slice(13, n) + '</b>';
+    tag.style.left = '960px'; tag.style.top = 512 + 170 + 'px'; tag.style.transform = `translateX(-50%) scale(${push})`;
+  },
+  problem(lt) {
+    const bubs = [...document.querySelectorAll('#chat .bub')], chat = $('#chat');
+    bubs.forEach((b, i) => { const a = lt - CHAT_T[i]; show(b, a >= 0); if (a >= 0) { const k = eBack(seg(a, 0, 0.22)); b.style.transform = `scale(${0.4 + 0.6 * k}) rotate(${(rnd(i) - 0.5) * 3}deg)`; } });
+    const anger = seg(lt, 1.6, 3.9);
+    const cin = eExpo(seg(lt, 0, 0.5));
+    chat.style.transform = `translateY(${(1 - cin) * 300}px) rotate(${-2 + Math.sin(lt * 40) * anger * 1.4}deg) translate(${(rnd(lt * 30) - 0.5) * anger * 14}px, ${(rnd(lt * 41) - 0.5) * anger * 10}px)`;
+    show(chat, lt < 4.95);
+    const stop = $('#stop'), sa = lt - 3.75; show(stop, sa >= 0 && lt < 4.95);
+    if (sa >= 0) { const k = eOut(seg(sa, 0, 0.16)); stop.style.left = '960px'; stop.style.top = '540px'; stop.style.transform = `translate(-50%,-50%) rotate(-9deg) scale(${2.4 - 1.4 * k})`; if (sa < 0.35) { const s = 1 - sa / 0.35; shake.x = (rnd(lt * 70) - 0.5) * 50 * s; shake.y = (rnd(lt * 30) - 0.5) * 50 * s; } }
+    const start = $('#start'), ta = lt - 4.95; show(start, ta >= 0);
+    if (ta >= 0) {
+      const k = eExpo(seg(ta, 0, 0.3)); start.style.left = '960px'; start.style.top = '500px'; start.style.transform = `translate(-50%,-50%) scale(${1.5 - 0.5 * k})`;
+      setReg(start, (1 - eOut(seg(ta, 0, 0.6))) * 26 + 3);
+    }
+    const cur = $('#bigcur'), ca = lt - 5.05; show(cur, ca >= 0);
+    if (ca >= 0) { const k = eOut(seg(ca, 0, 0.4)), press = ca > 0.42 && ca < 0.55 ? 0.86 : 1; cur.style.left = 1500 - 420 * k + 'px'; cur.style.top = 1000 - 380 * k + 'px'; cur.style.transform = `scale(${press})`; }
+    [['#ring1', 0.45], ['#ring2', 0.55]].forEach(([s, at]) => { const r = $(s), a = lt - 5.05 - at; show(r, a >= 0 && a < 0.5); if (a >= 0) { const k = eOut(seg(a, 0, 0.5)), d = 40 + 380 * k; r.style.width = r.style.height = d + 'px'; r.style.left = 1104 - d / 2 + 'px'; r.style.top = 638 - d / 2 + 'px'; r.style.opacity = 1 - k; } });
+    if (lt > 5.47 && lt < 5.75) { const s = 1 - (lt - 5.47) / 0.28; shake.x = (rnd(lt * 70) - 0.5) * 26 * s; shake.y = (rnd(lt * 30) - 0.5) * 26 * s; }
+  },
+  send(lt, dur) {
+    const k1 = $('#k1'), k2 = $('#k2'), plus = $('#plus');
+    const up = eIn(seg(lt, 1.0, 1.3));
+    [[k1, 0, 560], [k2, 0.5, 1060]].forEach(([k, at, x]) => {
+      const a = lt - at; show(k, a >= 0); if (a < 0) return;
+      const s = 2.4 - 1.4 * eOut(seg(a, 0, 0.14)), press = a > 0.14 && a < 0.32 ? 12 : 0;
+      k.style.display = 'grid'; k.style.left = x + 'px'; k.style.top = 330 + press - up * 900 + 'px'; k.style.transform = `scale(${s}) rotate(${(at ? 4 : -4) * (1 - up)}deg)`;
+      k.style.background = press ? 'var(--pink)' : '#fff';
+      if (a < 0.3) { const z = 1 - a / 0.3; shake.x = (rnd(lt * 70) - 0.5) * 44 * z; shake.y = (rnd(lt * 30) - 0.5) * 44 * z; }
+    });
+    show(plus, lt >= 0.25); plus.style.left = '925px'; plus.style.top = 410 - up * 900 + 'px';
+    const ttl = $('#s-title'), ta = lt - 1.1; show(ttl, ta >= 0);
+    if (ta >= 0) { const k = eExpo(seg(ta, 0, 0.4)); ttl.style.top = 150 + (1 - k) * 120 + 'px'; ttl.style.opacity = k; }
+    [['#r1', 1, 470], ['#r2', -1, 610], ['#r3', 1, 750]].forEach(([s, dir, y], i) => {
+      const r = $(s), a = lt - 1.25 - i * 0.08; show(r, a >= 0); if (a < 0) return;
+      const k = eExpo(seg(a, 0, 0.5));
+      r.style.top = y + (1 - k) * 400 + 'px'; r.style.transform = `translateX(${dir > 0 ? -300 - a * 520 : -2200 + a * 520}px) skewX(-8deg)`;
+    });
+    $('#sc-send .dots').style.transform = `translate(${(lt * 40) % 26}px, ${(lt * 22) % 26}px)`;
+  },
+  agent(lt, dur) {
+    const term = $('#term'), k = eExpo(seg(lt, 0, 0.7));
+    term.style.transform = `perspective(2400px) translateY(${(1 - k) * 200}px) rotateX(${(1 - k) * 18 + 2}deg) rotateY(${-3 + lt * 0.6}deg) scale(${0.92 + 0.08 * k + lt * 0.006})`;
+    const rows = [...document.querySelectorAll('#lines div')];
+    let shown = 0;
+    rows.forEach((r, i) => {
+      const [at, , txt, how] = TERM[i]; const on = lt >= at; show(r, on); if (!on) return; shown++;
+      if (how === 'type') { const n = Math.round(txt.length * seg(lt, at, at + 0.75)); r.innerHTML = txt.slice(0, n).replace(/</g, '&lt;') + (lt < 1.1 ? '<i class="caret"></i>' : ''); }
+    });
+    // spinner line while the agent works
+    const L = $('#lines'), over = Math.max(0, shown - 19);
+    L.style.transform = `translateY(${-over * 34.5}px)`;
+  },
+  works(lt, dur) {
+    const w = $('#w-word'), end = $('#w-end'), sc = $('#sc-works');
+    const i = Math.floor(lt / 0.25);
+    if (i < WORDS.length) {
+      show(w, true); show(end, false);
+      const word = WORDS[i], [bgc, fg] = WCOL[i]; sc.style.background = bgc;
+      [...w.children].forEach((c) => (c.textContent = word)); w.children[2].style.color = fg;
+      const a = lt - i * 0.25, k = eOut(seg(a, 0, 0.1));
+      w.style.left = '960px'; w.style.top = '540px'; w.style.transform = `translate(-50%,-50%) scale(${1.5 - 0.5 * k}) rotate(${(rnd(i) - 0.5) * 8}deg)`;
+      setReg(w, (1 - k) * 30 + 6, i);
+      w.children[0].style.color = fg === '#ff48b0' ? '#0078bf' : '#ff48b0'; w.children[1].style.color = fg === '#0078bf' ? '#ff48b0' : '#0078bf';
+    } else {
+      show(w, false); show(end, true); sc.style.background = 'transparent';
+      const a = lt - WORDS.length * 0.25, A = $('#w-a'), B = $('#w-b');
+      end.style.top = '250px';
+      const ka = eExpo(seg(a, 0, 0.3)), kb = eExpo(seg(a, 0.5, 0.8));
+      A.style.transform = `scale(${1.6 - 0.6 * ka})`; A.style.opacity = ka > 0 ? 1 : 0; setReg(A, (1 - ka) * 30 + 4);
+      B.style.transform = `scale(${1.6 - 0.6 * kb})`; B.style.opacity = a >= 0.5 ? 1 : 0; setReg(B, (1 - kb) * 30 + 4);
+      if (a < 0.25 || (a > 0.5 && a < 0.75)) { const z = 1 - ((a > 0.5 ? a - 0.5 : a) / 0.25); shake.x = (rnd(lt * 70) - 0.5) * 30 * z; shake.y = (rnd(lt * 30) - 0.5) * 30 * z; }
+    }
+    if (i < WORDS.length && lt - i * 0.25 < 0.08) { shake.x = (rnd(lt * 70) - 0.5) * 18; shake.y = (rnd(lt * 30) - 0.5) * 18; }
+  },
+  outro(lt, dur) {
+    const logo = $('#e-logo'), word = $('#e-word'), tag = $('#e-tag'), cmd = $('#e-cmd'), sm = $('#e-small');
+    const k = eBack(seg(lt, 0, 0.5)), sz = 420 * k, push = 1 + 0.04 * seg(lt, 0, dur);
+    logo.style.width = logo.style.height = sz + 'px'; logo.style.left = 960 - 450 - sz / 2 + 'px'; logo.style.top = 400 - sz / 2 + 'px';
+    spin(logo, -(lt * 150 + 700 * (1 - Math.exp(-lt * 2.5))));
+    const ws = 2.2 - 1.2 * eOut(seg(lt, 0, 0.2));
+    word.style.left = 960 + 160 + 'px'; word.style.top = '400px'; word.style.transform = `translate(-50%,-55%) scale(${ws * push})`;
+    setReg(word, (1 - eOut(seg(lt, 0, 0.7))) * 30 + 4 + Math.sin(lt * 7) * 1.5);
+    if (lt < 0.35) { const z = 1 - lt / 0.35; shake.x = (rnd(lt * 70) - 0.5) * 46 * z; shake.y = (rnd(lt * 30) - 0.5) * 46 * z; }
+    const kt = eExpo(seg(lt, 0.7, 1.1)); tag.style.top = 620 + (1 - kt) * 40 + 'px'; tag.style.opacity = kt;
+    const c = '$ unide init', n = Math.round(c.length * seg(lt, 1.5, 2.2));
+    cmd.innerHTML = `<b>$</b>${c.slice(1, n)}${lt < 3.4 && Math.floor(lt * 3) % 2 === 0 ? '▌' : ' '}`; cmd.style.top = '730px'; show(cmd, lt >= 1.4);
+    const ks = eExpo(seg(lt, 2.6, 3.0)); sm.style.top = 880 + (1 - ks) * 20 + 'px'; sm.style.opacity = ks;
+    $('#fade').style.opacity = eIO(seg(lt, dur - 0.9, dur));
+  },
+};
+window.init = (d) => { setup(d); gcaps(); };
+window.draw = draw;
+</script>
+</body></html>
