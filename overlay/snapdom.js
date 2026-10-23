@@ -1,5 +1,8 @@
 // snapDOM 3.3.6 (https://github.com/zumerlab/snapdom), MIT License, Copyright (c) 2025 ZumerLab.
-// Vendored unchanged; unide loads it only when it takes a pin's screenshot (overlay/shot.js).
+// Vendored with one line added below: its timers and animation frames are the browser's own, not the page's,
+// so a screenshot finishes while unide holds the page still (Safari's path waits on them). unide loads it only
+// when it takes a pin's screenshot (overlay/shot.js).
+const { setTimeout, clearTimeout, requestAnimationFrame } = globalThis.__unideEarly?.native || globalThis;
 /*
 * SnapDOM
 * v3.3.6

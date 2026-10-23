@@ -57,6 +57,7 @@ function openClosedRoots(layer) {
   // and unide's own bar inside same-origin frames stays out of the picture
   const hidden = [];
   for (const f of layer.querySelectorAll('iframe')) {
+    if (f.sandbox?.length && !f.sandbox.contains('allow-same-origin')) continue; // closed to us (asking makes Safari log an error)
     let o = null;
     try { o = f.contentDocument?.querySelector('unide-overlay'); } catch { /* another origin */ }
     if (o) { hidden.push([o, o.style.visibility]); o.style.visibility = 'hidden'; }

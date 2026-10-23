@@ -21,6 +21,8 @@ You need Node 20 or newer.
 
 `unide remove` undoes everything `unide init` did.
 
+Tested in Chrome (and the Chromium in Claude's app), Safari's engine (WebKit 18.5) and Firefox 137: pinning, the card, screenshots. The eyedropper in Style → Colour is Chrome's only.
+
 ## How you use it
 
 1. Your agent gives you a link to a page (or run `unide` to get one).
