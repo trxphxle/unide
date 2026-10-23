@@ -98,6 +98,7 @@ export const CSS = `
   .s-sent { background:var(--blue); color:var(--paper); }
   .s-addressed { background:var(--green); color:var(--paper); }
   .s-skipped { background:var(--grey); color:var(--ink); }
+  .s-options { background:repeating-linear-gradient(45deg, var(--pink) 0 4px, var(--blue) 4px 8px); color:var(--paper); }
   .pop { position:fixed; width:320px; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--blue); padding:12px 14px 14px; display:grid; gap:7px; }
   .pop > .row:first-child b { font:14px/1.15 var(--display); }
   .pop .layers { display:flex; flex-wrap:wrap; gap:4px; }
@@ -109,7 +110,8 @@ export const CSS = `
   .said { font-style:italic; }
   .reply { padding:7px 9px; background:var(--cream); border-left:5px solid var(--green); }
   .reply.s-skipped { border-left-color:var(--grey); }
-  .reply.s-addressed, .reply.s-skipped { background:var(--cream); color:var(--ink); }
+  .reply.s-addressed, .reply.s-skipped, .reply.s-options { background:var(--cream); color:var(--ink); }
+  .reply.s-options { border-left-color:var(--pink); }
   .reply b { font:12px var(--display); }
   .plist { position:fixed; left:12px; bottom:62px; width:350px; max-height:60vh; overflow:auto; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--blue); padding:10px 12px; display:grid; gap:7px; }
   .plist > .row:first-child b { font:13px var(--display); }

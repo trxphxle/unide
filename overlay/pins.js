@@ -25,7 +25,7 @@ import { INK } from './styles.js';
 import { info3, liveRect3, topIs, resolve3, showOutline, targetOf3, outline3, spot3 } from './three.js';
 
 export const P = { pins: [], open: null, list: false, toast: '' };
-const LABEL = { draft: 'not sent', sent: 'sent — waiting for the agent', addressed: 'addressed', skipped: 'skipped', dismissed: 'dismissed' };
+const LABEL = { draft: 'not sent', sent: 'sent — waiting for the agent', options: 'options ready: flip between them', addressed: 'addressed', skipped: 'skipped', dismissed: 'dismissed' };
 const shown = () => P.pins.filter((p) => p.status !== 'dismissed').sort((a, b) => a.id - b.id);
 export const drafts = () => P.pins.filter((p) => p.status === 'draft');
 
@@ -136,6 +136,8 @@ function find(e) {
 export async function load() {
   P.path = location.pathname;
   try { P.pins = await api('pins?page=' + encodeURIComponent(P.path)); } catch { P.pins = []; }
+  P.variant ||= {};
+  showVariants();
   draw(); render();
 }
 async function save(p) {
@@ -331,10 +333,12 @@ export function draw() {
       ${open.status === 'draft' ? open.elements.map((e) => ed.editRow(e, find(e), open.elements.length > 1, P)).join('') : open.elements.some((e) => e.edits) ? `<div class="small changed">On the page: ${esc(open.elements.flatMap((e) => ed.editWords(e.edits)).join(' · '))}</div>` : ''}
       ${open.elements.some((e) => e.shot) ? `<div class="shots">${open.elements.filter((e) => e.shot).map((e) => `<img src="/__unide/shot-file?name=${encodeURIComponent(e.shot.split('/').pop())}" alt="What the agent sees">`).join('')}</div>` : ''}
       ${open.status === 'draft' ? `<textarea data-in="pinnote" placeholder="What should change? e.g. too loud next to the cream">${esc(open.note)}</textarea>
-        <div class="row" style="margin-top:8px">${act('pinadd', '+ Add element', 'mini')}${act('pindel', 'Delete', 'mini')}<span class="grow"></span>${act('pindone', 'Done', 'mini primary')}</div>
+        <div class="row" style="margin-top:8px">${act('pinadd', '+ Add element', 'mini')}${act('pinopts', open.options ? '3 options ✓' : '3 options', `mini ${open.options ? 'on' : ''}`)}${act('pindel', 'Delete', 'mini')}<span class="grow"></span>${act('pindone', 'Done', 'mini primary')}</div>
+        ${open.options ? '<div class="small">The agent will build three versions; you flip between them here and keep one.</div>' : ''}
         <div class="small" style="margin-top:6px"><b>Return</b> done · <b>${isMac ? '⌥⇧' : 'Alt+Shift+'}-click</b> adds another element · <b>${optClick} again</b> goes a layer deeper · <b>Esc</b> on an empty note throws it away · <b>${isMac ? '⌘' : 'Ctrl+'}Return</b> sends</div>`
       : `${open.note ? `<div class="said">“${esc(open.note)}”</div>` : ''}${open.reply ? `<div class="reply s-${open.status}"><b>Agent:</b> ${esc(open.reply)}</div>` : ''}
-        <div class="row" style="margin-top:8px">${open.status !== 'sent' ? act('pindismiss', 'Dismiss', 'mini') : ''}${act('pinagain', 'New pin here', 'mini')}</div>`}
+        ${open.status === 'options' ? optionsChooser(open) : ''}
+        <div class="row" style="margin-top:8px">${!['sent', 'options'].includes(open.status) ? act('pindismiss', 'Dismiss', 'mini') : ''}${act('pinagain', 'New pin here', 'mini')}</div>`}
     </div>` : '';
   const hold = P.list && P.listHold;
   const optOn = window.__unideEarly?.optOn?.() !== false;
@@ -426,6 +430,18 @@ function setColour(k, p, rgb, final) {
   editCommit(pin, final);
 }
 let colourDrag = null;
+// options the agent built (data-unide-variant="<pin>-A"…): one shows at a time; flip, then keep one
+const variantsOf = (id) => [...new Set([...document.querySelectorAll(`[data-unide-variant^="${id}-"]`)].map((el) => el.getAttribute('data-unide-variant').slice(String(id).length + 1)))].sort();
+const variantSheet = Object.assign(document.createElement('style'), { id: 'unide-variants' });
+function showVariants() {
+  if (!variantSheet.isConnected) document.documentElement.append(variantSheet);
+  variantSheet.textContent = P.pins.filter((p) => p.status === 'options').map((p) => { const v = P.variant[p.id] || variantsOf(p.id)[0] || 'A'; return `[data-unide-variant^="${p.id}-"]:not([data-unide-variant="${p.id}-${v}"]){display:none !important}`; }).join('\n');
+}
+function optionsChooser(p) {
+  const vs = variantsOf(p.id), cur = P.variant[p.id] || vs[0];
+  if (!vs.length) return '<div class="small warn">The agent says the options are ready, but none are marked on this page yet (it may still be reloading).</div>';
+  return `<div class="small">Options</div><div class="row wrap">${vs.map((v) => `<button class="mini ${v === cur ? 'on' : ''}" data-act="pinvariant" data-arg="${p.id}|${v}">${v}</button>`).join('')}<span class="grow"></span>${act('pinkeep', `Keep ${cur}`, 'mini primary').replace('data-act="pinkeep"', `data-act="pinkeep" data-arg="${p.id}|${cur}"`)}</div>`;
+}
 // the draft pin holding element k, and that element
 function editTarget(k) {
   const pin = P.pins.find((p) => p.status === 'draft' && p.elements.some((x) => x.k === k));
@@ -576,6 +592,10 @@ Object.assign(actions, {
   cmpmode: (m) => { if (P.compare) { P.compare.mode = m; draw(); } },
   cmpclose: () => { P.compare = null; draw(); },
   cmpdismiss: (id) => { const a = compare.done.find((x) => x.id === +id); if (a) a.dismissed = true; if (P.compare?.id === +id) P.compare = null; draw(); },
+  // options
+  pinopts: async () => { const p = openDraft(); if (!p) return; p.options = p.options ? 0 : 3; await save(p); draw(); },
+  pinvariant: (arg) => { const [id, v] = arg.split('|'); P.variant[id] = v; showVariants(); draw(); },
+  pinkeep: async (arg) => { const [id, v] = arg.split('|'), p = P.pins.find((x) => x.id === +id); if (!p) return; await save({ id: p.id, chosen: v, status: 'sent' }); P.open = null; await load(); flash(`Sent: keep option ${v}. Your agent removes the others.`); },
   pinlayer: (arg) => { const [k, i] = arg.split('|'); setLayer(k, +i); },
   // changing it by hand (edits.js): each saves the pin and shows the change at once
   edittext: (k) => { const [pin, e] = editTarget(k), el = e && find(e); if (el) ed.editText(e, el, (changed) => (changed ? editCommit(pin, true) : draw())); },
@@ -647,8 +667,8 @@ function showAnswers(list) {
   const here = (list || []).filter((a) => a.page === location.pathname);
   // done ones go to the tray, with Compare; skipped ones say so
   compare.remember(here);
-  const skipped = here.filter((a) => !a.flushed), plain = here.filter((a) => a.flushed && !a.before?.length);
-  if (skipped.length || plain.length) flash([...plain.map((a) => `✓ #${a.id} done: ${a.reply}`), ...skipped.map((a) => `#${a.id} skipped: ${a.reply} (still in Pins)`)].join('\n'));
+  const opts = here.filter((a) => a.status === 'options'), skipped = here.filter((a) => !a.flushed && a.status === 'skipped'), plain = here.filter((a) => a.flushed && !a.before?.length);
+  if (opts.length || skipped.length || plain.length) flash([...opts.map((a) => `#${a.id}: options ready (${a.reply}). Open it to flip between them.`), ...plain.map((a) => `✓ #${a.id} done: ${a.reply}`), ...skipped.map((a) => `#${a.id} skipped: ${a.reply} (still in Pins)`)].join('\n'));
   else draw();
 }
 // One live connection per site, not one per page: a browser lets a page talk to a server over only six connections at
