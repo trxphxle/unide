@@ -1,13 +1,25 @@
 # unide
 
-Click things on your pages, say what should change, and your coding agent gets it: any agent, no copy-paste. Works with plain HTML and with apps that run on a dev server (Vite, Next.js, Nuxt, SvelteKit, Astro, Angular, Webpack/Rspack, Bun…).
+Point at things on your pages, say (or show) what should change, and your coding agent gets it: Claude Code, Codex, Cursor, Gemini, any agent, with no copy-paste and no screenshots pasted into chat. It works on plain HTML and on apps that run on a dev server (Vite, Next.js, Nuxt, SvelteKit, Astro, Angular, React Router, Webpack/Rspack, Bun), including 3D scenes.
 
-```sh
-cd your-project
-unide init
-```
+## Get started
 
-That's the whole setup. Restart any agent that's open; Claude Code and Cursor may ask you to approve the unide server once.
+You need Node 20 or newer.
+
+1. **Install unide** (once per computer):
+   ```sh
+   npm install -g @treearc/unide
+   ```
+   Until it's published, install it from this folder instead: `npm link` here.
+2. **Set up a project** (once per project):
+   ```sh
+   cd your-project
+   unide init
+   ```
+   This tells your agents about unide and connects them to it (AGENTS.md and an MCP server); nothing else to configure. Restart any agent that's open; Claude Code and Cursor may ask you to approve the unide server once.
+3. **Use it:** ask your agent for a link to a page (or run `unide` for one). The first time, a card by the swirl in the corner shows the gesture: **⌥-click** anything, say what should change, **Return**, then **⌘ Return** to send.
+
+`unide remove` undoes everything `unide init` did.
 
 ## How you use it
 
@@ -60,11 +72,23 @@ Words aren't always the quickest way. On an open pin's card, **Change it here** 
 | **Hide** | Take it off the page: the pin says to remove it |
 | **Shape** | Drag the edges for size, the green bars for padding (⇧ for all sides), the yellow dot for rounder corners |
 | **↑ ↓** | Move it before or after its neighbours. In a row, column or grid it moves on the page; elsewhere a pink line marks where it goes |
-| **Style** | A panel beside the card, with three tabs. **Colour**: its text, background or border, with a colour wheel, a lightness slider, a hex field, the eyedropper, or the page's own tokens and colours; it says the colour in words, whether text stays readable, and the nearest token (the agent is told to use it). **Font**: the page's fonts, then 67 trending free fonts, or search; point to preview, click to keep; fonts on your Mac say so, others have **Get ↗**. **Copy look**: ⌥-click another element to take its colours, border, corners, type, padding and shadow |
+| **Style** | A panel beside the card, with five tabs. **Colour**: its text, background or border, with a colour wheel, a lightness slider, a hex field, the eyedropper, or the page's own tokens and colours; it says the colour in words, whether text stays readable, and the nearest token (the agent is told to use it). **Font**: the page's fonts, then 67 trending free fonts, or search; point to preview, click to keep; fonts on your Mac say so, others have **Get ↗**. **Text**: size from the page's own type scale, weight, line height, letter spacing, capitals, alignment. **States**: show it hovered, pressed, focused or disabled without doing it; what you change then is for that state only. **Copy look**: ⌥-click another element to take its colours, border, corners, type, padding and shadow |
 | **Image** | On images only: drop a file, choose one, or paste a link; set how it fits (cover · contain · fill · none) and click its focal point. A dropped file waits in `.unide/assets/` for the agent and goes when the pin is done |
 | **Icon** | On icons only: swap it for one of Lucide's free icons (search by name or meaning); point to preview it in place, in the icon's own colour; click to keep |
 
 **⌘Z** undoes the last change, **Reset** clears them. The changes stay on the page until the agent answers the pin; then the page shows the real thing. A pin with changes and no note is still a clear request.
+
+## Three options instead of one
+
+Turn on **3 options** on a pin before you send it. The agent builds three versions in the code, marked so unide can flip between them, and answers "options ready". Open the pin: **A · B · C** switch the live page between them; **Keep B** sends your choice back, and the agent keeps that one and removes the others.
+
+## Before and after
+
+When the agent finishes a pin, a card by the bar says so, with **Compare**: your screenshot from when you pinned it against the same area now (a wipe, side by side, or one at a time). The pin itself is already gone; the before picture lives only in that page's memory until you leave.
+
+## Sizes
+
+**Sizes** on the bar shows the page at phone, tablet and laptop sizes side by side, each live: ⌥-click in any of them to pin there. Every pin records the window it was made in, and the agent hears when that was a small screen.
 
 ## 3D scenes (three.js and React Three Fiber)
 
@@ -95,4 +119,4 @@ Installed with `npm link` in this folder. Requires Node 20 or later.
 
 ## Code
 
-`bin/unide.mjs` (commands) · `lib/server.mjs` (static pages or the dev-server proxy, pins API, live reload) · `lib/devserver.mjs` (finding and starting dev servers) · `lib/routes.mjs` (framework routes) · `lib/pins.mjs` · `lib/mcp.mjs` (stdio MCP) · `lib/init.mjs` (init and remove) · `lib/locate.mjs` and `lib/sourcemap.mjs` (where code and styles are written) · `overlay/` (the page overlay, ES modules: `pins.js` is the default view, `components.js` and `stylesource.js` read components and style sources, `shot.js` takes the screenshots with the vendored `snapdom.js` (MIT), `freeze.js` and `early.js` (a plain script at the top of `<head>`, before the page's own) hold the page still, `layers.js` finds what's under the pointer, `edits.js` is Change it here, `three.js` finds 3D objects in three.js canvases, `dock.js` places the bar, `styles.js` is the look). The old Tools panel is kept, unused, in `attic/`. `fixtures/hard-ui/` is a Vite + React app of cases that are hard to pin, with `RESULTS.md`: what unide does on each.
+`bin/unide.mjs` (commands) · `lib/server.mjs` (static pages or the dev-server proxy, pins API, live reload) · `lib/devserver.mjs` (finding and starting dev servers) · `lib/routes.mjs` (framework routes) · `lib/pins.mjs` · `lib/mcp.mjs` (stdio MCP) · `lib/init.mjs` (init and remove) · `lib/locate.mjs` and `lib/sourcemap.mjs` (where code and styles are written) · `overlay/` (the page overlay, ES modules: `pins.js` is the default view, `components.js` and `stylesource.js` read components and style sources, `shot.js` takes the screenshots with the vendored `snapdom.js` (MIT), `freeze.js` and `early.js` (a plain script at the top of `<head>`, before the page's own) hold the page still, `layers.js` finds what's under the pointer, `edits.js` is Change it here, `three.js` finds 3D objects in three.js canvases, `dock.js` places the bar, `styles.js` is the look). The retired Tools panel is in the first commit of this repository. `fixtures/hard-ui/` is a Vite + React app of cases that are hard to pin, with `RESULTS.md`: what unide does on each.

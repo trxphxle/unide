@@ -5,6 +5,7 @@ import './panel.js';
 import { startPins } from './pins.js';
 import { startFreeze } from './freeze.js';
 import { startDock } from './dock.js';
+import { welcome } from './welcome.js';
 
 if (!window.__unide) {
   window.__unide = true;
@@ -14,4 +15,5 @@ if (!window.__unide) {
   startPins();
   startFreeze();
   startDock();
+  welcome();
 }

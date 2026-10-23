@@ -147,6 +147,13 @@ export const CSS = `
   .ehandles.dragging[data-h=p-top] .eh-p-top, .ehandles.dragging[data-h=p-right] .eh-p-right, .ehandles.dragging[data-h=p-bottom] .eh-p-bottom, .ehandles.dragging[data-h=p-left] .eh-p-left { opacity:1; }
   .eghost { position:fixed; display:none; pointer-events:none; border:2px dashed var(--ink); opacity:.45; }
   .eread { position:fixed; display:none; pointer-events:none; background:var(--pink); color:var(--ink); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--blue); font:12px/1.5 var(--mono); padding:2px 8px; white-space:nowrap; z-index:2; }
+  /* the first time: how it works, once */
+  .welcome { position:fixed; left:var(--bar-x, 12px); bottom:var(--bar-y, 62px); width:330px; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--pink); padding:12px 14px; display:grid; gap:6px; }
+  :host([data-h=r]) .welcome { left:auto; right:var(--bar-x, 12px); }
+  :host([data-v=t]) .welcome { bottom:auto; top:var(--bar-y, 62px); }
+  .welcome > b { font:15px var(--display); }
+  .welcome ol { margin:0; padding-left:18px; display:grid; gap:4px; }
+  .welcome li b { font:12px var(--display); }
   /* Sizes: the page at three sizes, side by side */
   .sizes { position:fixed; inset:0; pointer-events:auto; background:rgba(236,232,222,.96); display:grid; grid-template-rows:auto 1fr; z-index:4; }
   .sizesbar { display:flex; align-items:center; gap:12px; padding:10px 18px; border-bottom:var(--edge); background:var(--paper); }

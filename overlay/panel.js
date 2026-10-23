@@ -3,6 +3,7 @@ import { root, $, actions, inputs, changes, setRender, optKey, optClick, isMac }
 import { CSS, LOGO, FONTS } from './styles.js';
 import { toggleFreeze } from './freeze.js';
 import * as sizes from './sizes.js';
+import { dismiss as welcomed } from './welcome.js';
 
 root.innerHTML = `<style>${CSS}</style>
   <div class="hl hover"></div><div class="tag"></div>
@@ -17,7 +18,7 @@ root.innerHTML = `<style>${CSS}</style>
 setRender(() => {}); // the pins draw themselves (pins.js)
 // the two typefaces, declared on the page so the shadow root can use them (plain fallbacks when offline)
 if (!document.getElementById('unide-fonts')) document.head?.append(Object.assign(document.createElement('link'), { id: 'unide-fonts', rel: 'stylesheet', href: FONTS }));
-Object.assign(actions, { freeze: () => toggleFreeze(), sizes: () => sizes.open() });
+Object.assign(actions, { freeze: () => toggleFreeze(), sizes: () => sizes.open(), welcomed });
 
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
