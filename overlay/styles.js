@@ -165,12 +165,15 @@ export const CSS = `
   .cmpwait { padding:40px 12px; text-align:center; font:12px var(--mono); color:var(--soft); }
   .compare input[type=range] { width:100%; accent-color:var(--pink); }
   /* the side panel beside the pin card: Style (colour, font, copy look), Image, Icon */
-  .spanel { position:fixed; width:300px; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--pink); padding:12px 14px 14px; display:grid; gap:7px; }
+  .spanel { overflow:auto; max-height:calc(100vh - 16px); position:fixed; width:300px; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--pink); padding:12px 14px 14px; display:grid; gap:7px; }
   .spanel > .row:first-child b { font:13px/1.2 var(--display); }
   .spanel > .row.wrap { flex-wrap:wrap; gap:4px; }
   .pins.through .spanel { pointer-events:none; opacity:.25; }
   .spanel .flist { max-height:min(48vh, 380px); }
-  .imgtool, .icontool { display:grid; gap:7px; }
+  .imgtool, .icontool, .typetool { display:grid; gap:7px; }
+  .typetool .row.wrap { flex-wrap:wrap; gap:4px; }
+  .typetool input[type=range] { width:100%; accent-color:var(--pink); }
+  .soft { color:var(--faint); }
   .ithumb { position:relative; height:140px; border:2px solid var(--ink); background:var(--cream) center/cover no-repeat; cursor:crosshair; }
   .ifocus { position:absolute; width:18px; height:18px; margin:-9px 0 0 -9px; border:3px solid var(--paper); outline:2px solid var(--ink); border-radius:50%; background:var(--pink); pointer-events:none; }
   .idrop { border:2px dashed var(--ink); padding:12px; text-align:center; font:12px var(--mono); }

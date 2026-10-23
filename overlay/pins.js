@@ -19,6 +19,7 @@ import * as wheel from './wheel.js';
 import * as images from './images.js';
 import * as icons from './icons.js';
 import * as compare from './compare.js';
+import * as type from './type.js';
 import { parse, hex, words } from './colour.js';
 import { INK } from './styles.js';
 import { info3, liveRect3, topIs, resolve3, showOutline, targetOf3, outline3, spot3 } from './three.js';
@@ -346,9 +347,9 @@ export function draw() {
   const sp = P.side, se = open?.status === 'draft' && sp && open.elements.find((x) => x.k === sp.k), sel2 = se && find(se);
   let side = '';
   if (se && sel2) {
-    const style = ['colour', 'font', 'look'].includes(sp.kind), hasText = !!(sel2.innerText || '').trim();
-    const tabs = style ? `<div class="row wrap">${[['colour', 'Colour'], ...(hasText ? [['font', 'Font']] : []), ['look', 'Copy look']].map(([t, l]) => `<button class="mini ${sp.kind === t ? 'on' : ''}" data-act="sidetab" data-arg="${t}">${l}</button>`).join('')}</div>` : '';
-    const body = sp.kind === 'colour' ? wheel.colourPanel(se, sel2, P.colourProp, (p) => nowRgb(sel2, p)) : sp.kind === 'font' ? fonts.fontPanel(se, P.fontGroup, se.edits?.font?.to)
+    const style = ['colour', 'text', 'font', 'look'].includes(sp.kind), hasText = !!(sel2.innerText || '').trim();
+    const tabs = style ? `<div class="row wrap">${[['colour', 'Colour'], ...(hasText ? [['text', 'Text'], ['font', 'Font']] : []), ['look', 'Copy look']].map(([t, l]) => `<button class="mini ${sp.kind === t ? 'on' : ''}" data-act="sidetab" data-arg="${t}">${l}</button>`).join('')}</div>` : '';
+    const body = sp.kind === 'colour' ? wheel.colourPanel(se, sel2, P.colourProp, (p) => nowRgb(sel2, p)) : sp.kind === 'text' ? type.typePanel(se, sel2) : sp.kind === 'font' ? fonts.fontPanel(se, P.fontGroup, se.edits?.font?.to)
       : sp.kind === 'look' ? lookBody(se) : sp.kind === 'image' ? images.imagePanel(se, sel2) : icons.iconPanel(se, sel2);
     side = `<div class="spanel side"><div class="row"><b class="grow">${style ? 'Style' : sp.kind === 'image' ? 'Image' : 'Icon'} for ${esc(se.name)}</b>${act('editside', '×', 'x')}</div>${tabs}${body}</div>`;
   }
@@ -509,8 +510,19 @@ function place() {
       const pr = pop.getBoundingClientRect(), fh = fp.offsetHeight, right = innerWidth - 8 - pr.right - 10, left = pr.left - 10 - 8;
       const w = Math.max(240, Math.min(300, Math.max(right, left)));
       fp.style.width = w + 'px';
-      const x = right >= w ? pr.right + 10 : left >= w ? pr.left - 10 - w : Math.max(8, innerWidth - 8 - w);
-      fp.style.left = x + 'px'; fp.style.top = Math.max(8, Math.min(pr.top, innerHeight - fh - 8)) + 'px';
+      // a side that fits and stays off what you pinned; else one that fits; else the window's edge
+      let y = Math.max(8, Math.min(pr.top, innerHeight - fh - 8));
+      const clear = (x0, y0) => !t || x0 + w < t.left || x0 > t.right || y0 + fh < t.top || y0 > t.bottom;
+      const sides = [right >= w && pr.right + 10, left >= w && pr.left - 10 - w].filter((x0) => x0 !== false);
+      let x = sides.find((x0) => clear(x0, y));
+      if (x === undefined) {
+        // no side is clear of it: beside the card still, but below or above what you pinned
+        x = sides[0] ?? Math.max(8, innerWidth - 8 - w);
+        // the bigger space below or above it; the panel scrolls inside if it's taller than that
+        const below = t ? innerHeight - 8 - (t.bottom + 10) : 0, above = t ? t.top - 18 : 0, room2 = Math.max(below, above);
+        if (t && room2 >= 220) { fp.style.maxHeight = room2 + 'px'; y = below >= above ? t.bottom + 10 : Math.max(8, t.top - 10 - Math.min(fh, room2)); }
+      } else fp.style.maxHeight = '';
+      fp.style.left = x + 'px'; fp.style.top = y + 'px';
     }
   }
 }
@@ -566,12 +578,15 @@ Object.assign(actions, {
     fonts.preview(null); icons.preview(null);
     if (!arg) { P.side = null; return draw(); }
     const [k, which] = arg.split('|'), kind = which === 'style' ? P.lastStyle || 'colour' : which;
-    const same = P.side?.k === k && (which === 'style' ? ['colour', 'font', 'look'].includes(P.side.kind) : P.side.kind === which);
+    const same = P.side?.k === k && (which === 'style' ? ['colour', 'text', 'font', 'look'].includes(P.side.kind) : P.side.kind === which);
     P.side = same ? null : { k, kind };
     if (kind === 'font') P.fontGroup ||= fonts.pageFonts().length ? 'page' : 'sans';
     draw();
   },
   sidetab: (t) => { if (!P.side) return; P.side.kind = P.lastStyle = t; if (t === 'font') P.fontGroup ||= fonts.pageFonts().length ? 'page' : 'sans'; fonts.preview(null); draw(); },
+  // Style's Text tab (type.js)
+  tset: (arg) => { const [k, prop, v] = arg.split('|'), [pin, e] = editTarget(k), el = e && find(e); if (!el) return; ed.snapshot(e); type.set(e, el, prop, v, ed.original); ed.tidyEdits(e); editCommit(pin, true); },
+  treset: (k) => { const [pin, e] = editTarget(k); if (!e?.edits?.type) return; ed.snapshot(e); delete e.edits.type; ed.tidyEdits(e); editCommit(pin, true); },
   editlookreset: (k) => { const [pin, e] = editTarget(k); if (!e?.edits?.look) return; ed.snapshot(e); delete e.edits.look; ed.tidyEdits(e); editCommit(pin, true); },
   // images (images.js)
   ifit: (arg) => { const [k, f] = arg.split('|'), [pin, e] = editTarget(k), el = e && find(e); if (!el) return; ed.snapshot(e); images.setFit(e, el, f); ed.tidyEdits(e); editCommit(pin, true); },
@@ -677,6 +692,10 @@ export function startPins() {
   root.addEventListener('dragover', (ev) => { const d = ev.composedPath().find((n) => n.dataset?.drop); if (d) { ev.preventDefault(); d.classList.add('over'); } });
   root.addEventListener('dragleave', (ev) => ev.composedPath().find((n) => n.dataset?.drop)?.classList.remove('over'));
   root.addEventListener('drop', (ev) => { const d = ev.composedPath().find((n) => n.dataset?.drop), f = ev.dataTransfer?.files?.[0]; if (!d) return; ev.preventDefault(); d.classList.remove('over'); if (f) imageTo(d.dataset.drop, (e, el) => images.setFile(e, el, f)); });
+  // Text's sliders: shown while they move, saved when let go
+  let tDrag = false;
+  inputs.ttrack = (inp) => { const box = inp.closest('.typetool'), [pin, e] = editTarget(box.dataset.k), el = e && find(e); if (!el) return; if (!tDrag) { ed.snapshot(e); tDrag = true; } type.set(e, el, inp.dataset.prop, inp.value, ed.original); ed.tidyEdits(e); const out = box.querySelector(`[data-out="${inp.dataset.prop}"]`); if (out) out.textContent = inp.dataset.prop === 'letter-spacing' ? inp.value + 'em' : inp.value; editCommit(pin, false); };
+  changes.ttrackdone = (inp) => { tDrag = false; const [pin] = editTarget(inp.closest('.typetool').dataset.k); editCommit(pin, true); };
   // the wipe moves without redrawing everything
   inputs.cmpwipe = (inp) => { if (!P.compare) return; P.compare.cut = +inp.value; const box = inp.closest('.compare'); box.querySelector('.cmpbefore').style.clipPath = `inset(0 ${100 - P.compare.cut}% 0 0)`; box.querySelector('.cmpline').style.left = P.compare.cut + '%'; };
   inputs.fontq = (inp) => { const box = inp.closest('.fonts'), list = box?.querySelector('.flist'), pin = openDraft(), e = pin?.elements.find((x) => x.k === box.dataset.k); if (!list || !e) return; list.innerHTML = inp.value.trim() ? fonts.searchRows(e.k, inp.value, e.edits?.font?.to) : ''; if (!inp.value.trim()) draw(); };

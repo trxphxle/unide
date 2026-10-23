@@ -34,6 +34,7 @@ function declsFor(el, ed) {
   if (b.radius) d['border-radius'] = b.radius[1] + 'px';
   for (const x of ed.look?.diffs || []) if (!(x.prop === 'padding' && b.padding) && !(x.prop === 'border-radius' && b.radius)) d[x.prop] = x.to;
   for (const [p, c] of Object.entries(ed.colour || {})) d[p] = c.to;
+  for (const [p, c] of Object.entries(ed.type || {})) d[p] = c.to;
   if (ed.font) { loadFull(ed.font.to); d['font-family'] = `"${ed.font.to}", ${ed.font.from}`; }
   return d;
 }
@@ -98,6 +99,7 @@ export function editWords(ed = {}) {
   if (b.radius) out.push(`corner radius ${b.radius[0]} → ${b.radius[1]}px`);
   if (ed.move) out.push(`move it ${ed.move.by < 0 ? 'before' : 'after'} ${nm(ed.move.next)}${ed.move.shown ? '' : ' (marked on the page, not moved)'}`);
   const own = (x) => !(x.prop === 'border-radius' && b.radius) && !(x.prop === 'padding' && b.padding); // dragged after: those win
+  for (const [p, c] of Object.entries(ed.type || {})) out.push(`${{ 'font-size': 'text size', 'font-weight': 'weight', 'line-height': 'line height', 'letter-spacing': 'letter spacing', 'text-transform': 'capitals', 'text-align': 'alignment' }[p]} ${c.from} → ${c.to}`);
   for (const [p, c] of Object.entries(ed.colour || {})) out.push(`${{ color: 'text colour', 'background-color': 'background', 'border-color': 'border colour' }[p]} ${c.from} → ${c.to}`);
   if (ed.image?.src) out.push(`image → ${ed.image.src.name || ed.image.src.url.slice(0, 50)}`);
   if (ed.image?.fit) out.push(`fit ${ed.image.fit.from} → ${ed.image.fit.to}`);
@@ -114,7 +116,7 @@ export function editRow(e, el, named, state) {
   if (!el || e.three) return '';
   const ed = e.edits || {}, words = editWords(ed), hasText = textNodes(el).length > 0, k = e.k;
   const look = state.lookFor === k, shape = state.shape === k;
-  const side = state.side?.k === k ? (['colour', 'font', 'look'].includes(state.side.kind) ? 'style' : state.side.kind) : null;
+  const side = state.side?.k === k ? (['colour', 'text', 'font', 'look'].includes(state.side.kind) ? 'style' : state.side.kind) : null;
   return `<div class="edits">${named ? `<div class="small"><b>${esc(e.name)}</b></div>` : ''}
     <div class="row wrap">
       ${hasText ? act('edittext', k, 'Edit text', 'mini', 'Rewrite it right here') : ''}
