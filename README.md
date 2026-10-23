@@ -8,9 +8,9 @@ You need Node 20 or newer.
 
 1. **Install unide** (once per computer):
    ```sh
-   npm install -g github:trxphxle/unide
+   npm install -g --allow-remote=root https://github.com/trxphxle/unide/releases/download/v0.3.0/treearc-unide-0.3.0.tgz
    ```
-   Or a fixed version: the `.tgz` on the [Releases page](https://github.com/trxphxle/unide/releases), with `npm install -g <its link>`. Working on unide itself? `npm link` in this folder.
+   That's the latest [release](https://github.com/trxphxle/unide/releases). For the newest code instead: `npm install -g --allow-git=root github:trxphxle/unide`. (npm 12 refuses packages from outside its registry unless you allow them; `root` allows only this one. Older npm ignores the flag.) Working on unide itself? `npm link` in this folder.
 2. **Set up a project** (once per project):
    ```sh
    cd your-project
@@ -117,7 +117,7 @@ Screenshots are drawn from the page itself when you pin (no permission prompt, n
 
 `unide init` · `unide` (start it here and print the link) · `unide remove` · `unide mcp` (started by your agent tools)
 
-Installed with `npm install -g github:trxphxle/unide` (or `npm link` in this folder). Requires Node 20 or later.
+Installed from a GitHub release (see Get started) or with `npm link` in this folder. Requires Node 20 or later.
 
 ## Code
 
