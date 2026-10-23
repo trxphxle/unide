@@ -18,6 +18,7 @@ import * as fonts from './fonts.js';
 import * as wheel from './wheel.js';
 import * as images from './images.js';
 import * as icons from './icons.js';
+import * as compare from './compare.js';
 import { parse, hex, words } from './colour.js';
 import { INK } from './styles.js';
 import { info3, liveRect3, topIs, resolve3, showOutline, targetOf3, outline3, spot3 } from './three.js';
@@ -351,7 +352,7 @@ export function draw() {
       : sp.kind === 'look' ? lookBody(se) : sp.kind === 'image' ? images.imagePanel(se, sel2) : icons.iconPanel(se, sel2);
     side = `<div class="spanel side"><div class="row"><b class="grow">${style ? 'Style' : sp.kind === 'image' ? 'Image' : 'Icon'} for ${esc(se.name)}</b>${act('editside', '×', 'x')}</div>${tabs}${body}</div>`;
   }
-  layer.innerHTML = `<div class="marks"></div>${card}${side}${list}${P.toast ? `<div class="toast">${esc(P.toast)}</div>` : ''}`;
+  layer.innerHTML = `<div class="marks"></div>${card}${side}${list}${compare.tray()}${P.compare ? compare.view(P.compare) : ''}${P.toast ? `<div class="toast">${esc(P.toast)}</div>` : ''}`;
   if (se && sel2 && sp.kind === 'colour') wheel.paint(colourBox(), nowRgb(sel2, colourBox()?.dataset.prop) || [128, 128, 128]);
   if (hold) layer.querySelector('.plist').scrollTop = hold.scroll;
   const ta = layer.querySelector('.pop textarea');
@@ -547,6 +548,11 @@ Object.assign(actions, {
   pinclose: () => { P.open = null; draw(); },
   // for apps that use ⌥-click themselves (code editors, design tools)
   optclick: () => { const on = window.__unideEarly?.optOn?.() !== false; try { localStorage.setItem('unide:optclick', on ? 'off' : 'on'); } catch { /* no storage */ } draw(); },
+  // before and after for pins the agent finished (compare.js)
+  cmpopen: async (id) => { const a = compare.done.find((x) => x.id === +id); if (!a) return; P.compare = { id: a.id, mode: 'wipe', cut: 50, after: undefined }; draw(); const shot = await compare.after(a, find); if (P.compare?.id === a.id) { P.compare.after = shot; draw(); } },
+  cmpmode: (m) => { if (P.compare) { P.compare.mode = m; draw(); } },
+  cmpclose: () => { P.compare = null; draw(); },
+  cmpdismiss: (id) => { const a = compare.done.find((x) => x.id === +id); if (a) a.dismissed = true; if (P.compare?.id === +id) P.compare = null; draw(); },
   pinlayer: (arg) => { const [k, i] = arg.split('|'); setLayer(k, +i); },
   // changing it by hand (edits.js): each saves the pin and shows the change at once
   edittext: (k) => { const [pin, e] = editTarget(k), el = e && find(e); if (el) ed.editText(e, el, (changed) => (changed ? editCommit(pin, true) : draw())); },
@@ -602,7 +608,11 @@ inputs.pinnote = (el) => {
 const ASSET = /\.(html?|css|js|mjs|svg|png|jpe?g|gif|webp|woff2?|json)$/i;
 function showAnswers(list) {
   const here = (list || []).filter((a) => a.page === location.pathname);
-  if (here.length) flash(here.map((a) => a.flushed ? `✓ #${a.id} done: ${a.reply}` : `#${a.id} skipped: ${a.reply} (still in Pins)`).join('\n'));
+  // done ones go to the tray, with Compare; skipped ones say so
+  compare.remember(here);
+  const skipped = here.filter((a) => !a.flushed), plain = here.filter((a) => a.flushed && !a.before?.length);
+  if (skipped.length || plain.length) flash([...plain.map((a) => `✓ #${a.id} done: ${a.reply}`), ...skipped.map((a) => `#${a.id} skipped: ${a.reply} (still in Pins)`)].join('\n'));
+  else draw();
 }
 function listen() {
   const es = new EventSource('/__unide/events');
@@ -667,6 +677,8 @@ export function startPins() {
   root.addEventListener('dragover', (ev) => { const d = ev.composedPath().find((n) => n.dataset?.drop); if (d) { ev.preventDefault(); d.classList.add('over'); } });
   root.addEventListener('dragleave', (ev) => ev.composedPath().find((n) => n.dataset?.drop)?.classList.remove('over'));
   root.addEventListener('drop', (ev) => { const d = ev.composedPath().find((n) => n.dataset?.drop), f = ev.dataTransfer?.files?.[0]; if (!d) return; ev.preventDefault(); d.classList.remove('over'); if (f) imageTo(d.dataset.drop, (e, el) => images.setFile(e, el, f)); });
+  // the wipe moves without redrawing everything
+  inputs.cmpwipe = (inp) => { if (!P.compare) return; P.compare.cut = +inp.value; const box = inp.closest('.compare'); box.querySelector('.cmpbefore').style.clipPath = `inset(0 ${100 - P.compare.cut}% 0 0)`; box.querySelector('.cmpline').style.left = P.compare.cut + '%'; };
   inputs.fontq = (inp) => { const box = inp.closest('.fonts'), list = box?.querySelector('.flist'), pin = openDraft(), e = pin?.elements.find((x) => x.k === box.dataset.k); if (!list || !e) return; list.innerHTML = inp.value.trim() ? fonts.searchRows(e.k, inp.value, e.edits?.font?.to) : ''; if (!inp.value.trim()) draw(); };
   // while a pin is open: Esc leaves Copy look or Shape; ⌘Z undoes the last change by hand (not while undoing typing)
   root.addEventListener('keydown', (ev) => {

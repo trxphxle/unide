@@ -145,6 +145,25 @@ export const CSS = `
   .ehandles.dragging[data-h=p-top] .eh-p-top, .ehandles.dragging[data-h=p-right] .eh-p-right, .ehandles.dragging[data-h=p-bottom] .eh-p-bottom, .ehandles.dragging[data-h=p-left] .eh-p-left { opacity:1; }
   .eghost { position:fixed; display:none; pointer-events:none; border:2px dashed var(--ink); opacity:.45; }
   .eread { position:fixed; display:none; pointer-events:none; background:var(--pink); color:var(--ink); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--blue); font:12px/1.5 var(--mono); padding:2px 8px; white-space:nowrap; z-index:2; }
+  /* pins the agent finished: a tray by the bar, and before and after */
+  .donetray { position:fixed; left:var(--bar-x, 12px); bottom:var(--bar-y, 62px); width:340px; display:grid; gap:6px; pointer-events:auto; }
+  :host([data-h=r]) .donetray { left:auto; right:var(--bar-x, 12px); }
+  :host([data-v=t]) .donetray { bottom:auto; top:var(--bar-y, 62px); }
+  .doneitem { display:flex; gap:8px; align-items:center; background:var(--paper); border:var(--edge); box-shadow:4px 4px 0 var(--green); padding:6px 8px; }
+  .doneitem b { font:12px var(--display); }
+  .compare { position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); width:min(760px, calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:8px 8px 0 var(--green); padding:14px 16px; display:grid; gap:8px; z-index:3; }
+  .compare > .row { flex-wrap:wrap; gap:4px; }
+  .compare > .row b { font:14px var(--display); margin-right:6px; }
+  .cmpstack { position:relative; border:2px solid var(--ink); background:var(--cream); }
+  .cmpstack img { display:block; width:100%; height:auto; }
+  .cmpstack .cmpbefore { position:absolute; inset:0; height:100%; object-fit:fill; }
+  .cmpline { position:absolute; top:0; bottom:0; width:3px; margin-left:-1.5px; background:var(--pink); box-shadow:0 0 0 1px var(--paper); pointer-events:none; }
+  .cmpside { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cmpside figure { margin:0; border:2px solid var(--ink); background:var(--cream); }
+  .cmpside img { display:block; width:100%; height:auto; }
+  .cmpside figcaption { font:11px var(--mono); padding:3px 6px; border-top:2px solid var(--ink); background:var(--paper); }
+  .cmpwait { padding:40px 12px; text-align:center; font:12px var(--mono); color:var(--soft); }
+  .compare input[type=range] { width:100%; accent-color:var(--pink); }
   /* the side panel beside the pin card: Style (colour, font, copy look), Image, Icon */
   .spanel { position:fixed; width:300px; pointer-events:auto; background:var(--paper); border:var(--edge); box-shadow:6px 6px 0 var(--pink); padding:12px 14px 14px; display:grid; gap:7px; }
   .spanel > .row:first-child b { font:13px/1.2 var(--display); }
