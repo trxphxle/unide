@@ -49,10 +49,11 @@ export function applyEdits(list) {
   for (const { e, el } of list) {
     const ed = e.edits;
     if (!el || !ed || !Object.keys(ed).length) continue;
+    const at = (s) => atState(s, sel(e.k), ed.at); // changes made for a state (hover, pressed…) apply in that state
     const ks = new Set((el.getAttribute('data-unide-e') || '').split(' ').filter(Boolean));
     if (!ks.has(e.k)) { ks.add(e.k); el.setAttribute('data-unide-e', [...ks].join(' ')); }
-    css.push(decl(sel(e.k), declsFor(el, ed)));
-    if (ed.font) css.push(decl(`${sel(e.k)} *`, { 'font-family': `"${ed.font.to}", ${ed.font.from}` })); // its text inside, too
+    css.push(decl(at(sel(e.k)), declsFor(el, ed)));
+    if (ed.font) css.push(decl(at(`${sel(e.k)} *`), { 'font-family': `"${ed.font.to}", ${ed.font.from}` })); // its text inside, too
     for (const [s, d] of [...imageCss(sel(e.k), el, ed.image), ...iconCss(e.k, el, ed.icon?.to)]) css.push(decl(s, d));
     if (ed.text) { keep.add(e.k); putText(e.k, el, ed.text.to); }
     if (ed.move && el.parentElement && flexy(el.parentElement)) order(el, ed.move);
@@ -85,11 +86,20 @@ export function original(el, prop) {
   try { return getComputedStyle(el).getPropertyValue(prop); } finally { sheet.disabled = false; }
 }
 
+// a selector for one state: the real pseudo-class, and the attribute States uses to show it
+const PSEUDO = { hover: [':hover', '[data-unide-hover]'], pressed: [':active', '[data-unide-active]'], focus: [':focus-visible', '[data-unide-focus-visible]'], disabled: [':disabled', '[disabled]'] };
+function atState(s, tok, state) {
+  const p = PSEUDO[state];
+  return p ? p.map((x) => s.replace(tok, tok + x)).join(', ') : s;
+}
+
 // ---------- what was changed, in words (for the card and the agent) ----------
 const nm = (x) => `${x.name}${x.text ? ` “${x.text}”` : ''}`;
 export function editWords(ed = {}) {
   const out = [];
+  if (!Object.keys(ed).some((k) => k !== 'at')) return out; // a state chosen, nothing changed yet
   if (ed.text) out.push(`text “${ed.text.from}” → “${ed.text.to}”`);
+  if (ed.at && ed.at !== 'normal') out.push(`(for its ${ed.at} state)`);
   if (ed.hide) out.push('remove it');
   const b = ed.box || {};
   if (b.width) out.push(`width ${b.width[0]} → ${b.width[1]}px`);
@@ -116,7 +126,7 @@ export function editRow(e, el, named, state) {
   if (!el || e.three) return '';
   const ed = e.edits || {}, words = editWords(ed), hasText = textNodes(el).length > 0, k = e.k;
   const look = state.lookFor === k, shape = state.shape === k;
-  const side = state.side?.k === k ? (['colour', 'text', 'font', 'look'].includes(state.side.kind) ? 'style' : state.side.kind) : null;
+  const side = state.side?.k === k ? (['colour', 'text', 'font', 'states', 'look'].includes(state.side.kind) ? 'style' : state.side.kind) : null;
   return `<div class="edits">${named ? `<div class="small"><b>${esc(e.name)}</b></div>` : ''}
     <div class="row wrap">
       ${hasText ? act('edittext', k, 'Edit text', 'mini', 'Rewrite it right here') : ''}
@@ -143,7 +153,7 @@ function brief(n) {
 // ---------- changes, with undo ----------
 const undos = new Map(); // k → earlier versions of its changes
 const snap = (e) => { const s = undos.get(e.k) || []; s.push(JSON.stringify(e.edits || {})); undos.set(e.k, s.slice(-50)); };
-const tidy = (e) => { if (e.edits && !Object.keys(e.edits).length) delete e.edits; };
+const tidy = (e) => { if (e.edits && !Object.keys(e.edits).filter((x) => x !== 'at').length && !e.edits.at) delete e.edits; };
 export const snapshot = (e) => snap(e);
 export const tidyEdits = (e) => tidy(e);
 export function undo(e) {

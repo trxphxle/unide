@@ -10,7 +10,7 @@ import { ruleSource } from './stylesource.js';
 import { setRoot } from './sourcemap.js';
 import { pathOf, allRules, splitList, TRANSIENT, specificity } from './dom.js';
 import { shoot } from './shot.js';
-import { frozen, freeze, unfreeze, isQuiet } from './freeze.js';
+import { frozen, freeze, unfreeze, isQuiet, forceState, unforce } from './freeze.js';
 import { shadowOf, label, rectOf, above, stackAt } from './layers.js';
 import { expand } from './dock.js';
 import * as ed from './edits.js';
@@ -320,7 +320,7 @@ layer.className = 'pins';
 let noteTimer;
 export function draw() {
   if (!layer.isConnected) root.append(layer);
-  if (!openDraft()) { P.shape = P.lookFor = P.side = null; ed.closeEditor(); fonts.preview(null); icons.preview(null); }
+  if (!openDraft()) { P.shape = P.lookFor = P.side = null; ed.closeEditor(); fonts.preview(null); icons.preview(null); if (P.showState) { P.showState = null; unforce(); } }
   const open = P.pins.find((p) => p.id === P.open);
   const card = open ? `<div class="pop" data-pin="${open.id}">
       <div class="row"><span class="badge s-${open.status}">${open.id}</span><b class="grow">${open.elements.length ? open.elements.map((e) => esc(e.name)).join(', ') : 'From Tools'}</b>${act('pinclose', '×', 'x')}</div>
@@ -348,10 +348,10 @@ export function draw() {
   const sp = P.side, se = open?.status === 'draft' && sp && open.elements.find((x) => x.k === sp.k), sel2 = se && find(se);
   let side = '';
   if (se && sel2) {
-    const style = ['colour', 'text', 'font', 'look'].includes(sp.kind), hasText = !!(sel2.innerText || '').trim();
-    const tabs = style ? `<div class="row wrap">${[['colour', 'Colour'], ...(hasText ? [['text', 'Text'], ['font', 'Font']] : []), ['look', 'Copy look']].map(([t, l]) => `<button class="mini ${sp.kind === t ? 'on' : ''}" data-act="sidetab" data-arg="${t}">${l}</button>`).join('')}</div>` : '';
+    const style = ['colour', 'text', 'font', 'states', 'look'].includes(sp.kind), hasText = !!(sel2.innerText || '').trim();
+    const tabs = style ? `<div class="row wrap">${[['colour', 'Colour'], ...(hasText ? [['text', 'Text'], ['font', 'Font']] : []), ['states', 'States'], ['look', 'Copy look']].map(([t, l]) => `<button class="mini ${sp.kind === t ? 'on' : ''}" data-act="sidetab" data-arg="${t}">${l}</button>`).join('')}</div>` : '';
     const body = sp.kind === 'colour' ? wheel.colourPanel(se, sel2, P.colourProp, (p) => nowRgb(sel2, p)) : sp.kind === 'text' ? type.typePanel(se, sel2) : sp.kind === 'font' ? fonts.fontPanel(se, P.fontGroup, se.edits?.font?.to)
-      : sp.kind === 'look' ? lookBody(se) : sp.kind === 'image' ? images.imagePanel(se, sel2) : icons.iconPanel(se, sel2);
+      : sp.kind === 'look' ? lookBody(se) : sp.kind === 'states' ? statesBody(se, sel2) : sp.kind === 'image' ? images.imagePanel(se, sel2) : icons.iconPanel(se, sel2);
     side = `<div class="spanel side"><div class="row"><b class="grow">${style ? 'Style' : sp.kind === 'image' ? 'Image' : 'Icon'} for ${esc(se.name)}</b>${act('editside', '×', 'x')}</div>${tabs}${body}</div>`;
   }
   layer.innerHTML = `<div class="marks"></div>${card}${side}${list}${compare.tray()}${P.compare ? compare.view(P.compare) : ''}${P.toast ? `<div class="toast">${esc(P.toast)}</div>` : ''}`;
@@ -389,7 +389,17 @@ function undoKey(ev, pin, page = false) {
   if (/^(TEXTAREA|INPUT|SELECT)$/.test(t?.tagName) || t?.isContentEditable) { if (page || t.value) return; }
   if ([...pin.elements].reverse().some((x) => ed.undo(x))) { ev.preventDefault(); ev.stopImmediatePropagation(); editCommit(pin, true); }
 }
-// Style's third tab: give it another element's look
+// Style's States tab: see it hovered, pressed, focused or disabled without doing it, and change it for that state
+const CAN_DISABLE = /^(BUTTON|INPUT|SELECT|TEXTAREA|FIELDSET|OPTION)$/;
+function statesBody(e, el) {
+  const at = e.edits?.at || 'normal', showing = P.showState?.k === e.k ? P.showState.state : at;
+  const list = [['normal', 'Normal'], ['hover', 'Hover'], ['pressed', 'Pressed'], ['focus', 'Focus'], ...(CAN_DISABLE.test(el.tagName) ? [['disabled', 'Disabled']] : [])];
+  return `<div class="small">Show it as</div>
+    <div class="row wrap">${list.map(([s, l]) => `<button class="mini ${showing === s ? 'on' : ''}" data-act="stateshow" data-arg="${e.k}|${s}">${l}</button>`).join('')}</div>
+    <div class="small">${at === 'normal' ? 'Changes you make apply to it as it normally is.' : `Changes you make (colour, text, shape…) apply to its <b>${at}</b> state only.`}</div>
+    ${e.edits && Object.keys(e.edits).some((x) => x !== 'at') && showing !== at ? '<div class="small warn">Its changes are kept for one state at a time: switching moves them to this one.</div>' : ''}`;
+}
+// Style's last tab: give it another element's look
 function lookBody(e) {
   const L = e.edits?.look, on = P.lookFor === e.k;
   return `<div class="small">Give it another element's look: its colours, border, corners, type, padding and shadow.</div>
@@ -579,7 +589,7 @@ Object.assign(actions, {
     fonts.preview(null); icons.preview(null);
     if (!arg) { P.side = null; return draw(); }
     const [k, which] = arg.split('|'), kind = which === 'style' ? P.lastStyle || 'colour' : which;
-    const same = P.side?.k === k && (which === 'style' ? ['colour', 'text', 'font', 'look'].includes(P.side.kind) : P.side.kind === which);
+    const same = P.side?.k === k && (which === 'style' ? ['colour', 'text', 'font', 'states', 'look'].includes(P.side.kind) : P.side.kind === which);
     P.side = same ? null : { k, kind };
     if (kind === 'font') P.fontGroup ||= fonts.pageFonts().length ? 'page' : 'sans';
     draw();
@@ -588,6 +598,17 @@ Object.assign(actions, {
   // Style's Text tab (type.js)
   tset: (arg) => { const [k, prop, v] = arg.split('|'), [pin, e] = editTarget(k), el = e && find(e); if (!el) return; ed.snapshot(e); type.set(e, el, prop, v, ed.original); ed.tidyEdits(e); editCommit(pin, true); },
   treset: (k) => { const [pin, e] = editTarget(k); if (!e?.edits?.type) return; ed.snapshot(e); delete e.edits.type; ed.tidyEdits(e); editCommit(pin, true); },
+  // States: show it in a state; what you change from then on is for that state
+  stateshow: (arg) => {
+    const [k, s] = arg.split('|'), [pin, e] = editTarget(k), el = e && find(e);
+    if (!el) return;
+    P.showState = { k, state: s };
+    forceState(el, s);
+    ed.snapshot(e); e.edits ||= {};
+    if (s === 'normal') delete e.edits.at; else e.edits.at = s;
+    ed.tidyEdits(e);
+    editCommit(pin, true);
+  },
   editlookreset: (k) => { const [pin, e] = editTarget(k); if (!e?.edits?.look) return; ed.snapshot(e); delete e.edits.look; ed.tidyEdits(e); editCommit(pin, true); },
   // images (images.js)
   ifit: (arg) => { const [k, f] = arg.split('|'), [pin, e] = editTarget(k), el = e && find(e); if (!el) return; ed.snapshot(e); images.setFit(e, el, f); ed.tidyEdits(e); editCommit(pin, true); },

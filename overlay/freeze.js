@@ -25,6 +25,25 @@ function stateRules() {
   return out.join('\n');
 }
 
+// showing one element in a state (Style → States): the same rules, and the attribute on it and what holds it
+const shown = Object.assign(document.createElement('style'), { id: 'unide-state' });
+let forced = [];
+export const STATE_ATTR = { hover: 'data-unide-hover', pressed: 'data-unide-active', focus: 'data-unide-focus-visible' };
+export function forceState(el, state) {
+  unforce();
+  if (!el || !state || state === 'normal') return;
+  if (state === 'disabled') { if (!el.hasAttribute('disabled')) { el.setAttribute('disabled', ''); forced.push([el, 'disabled']); } return; }
+  const attrs = state === 'focus' ? ['data-unide-focus-visible', 'data-unide-focus', 'data-unide-focus-within'] : [STATE_ATTR[state]];
+  // a hover also hovers what holds it (rules like .card:hover .btn)
+  for (let e = el; e && e !== document.documentElement; e = e.parentElement) for (const a of attrs) {
+    if (state === 'focus' && e !== el && a !== 'data-unide-focus-within') continue;
+    if (!e.hasAttribute(a)) { e.setAttribute(a, ''); forced.push([e, a]); }
+  }
+  shown.textContent = stateRules();
+  document.documentElement.append(shown);
+}
+export function unforce() { for (const [e, a] of forced) e.removeAttribute(a); forced = []; shown.remove(); }
+
 function holdAnimations() {
   for (const a of document.getAnimations()) if (a.playState === 'running') { a.pause(); paused.push(a); }
   if (E.frozen) E.native.requestAnimationFrame(holdAnimations); // ones that start while frozen (a hover that changed) too
